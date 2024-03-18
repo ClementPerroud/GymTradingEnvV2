@@ -1,16 +1,17 @@
 import asyncio
 from functools import lru_cache
+from datetime import datetime
 
+from element import AbstractEnvironmentElement
 from exchanges import AbstractExchange
 from exchanges.responses import OrderResponse
 from core import Pair, Asset, Value
 
-class ExchangeManager:
-    @classmethod
-    async def create(cls, exchange: AbstractExchange) -> None:
-        self = cls()
+class ExchangeManager(AbstractEnvironmentElement):
+    def __init__(self, exchange: AbstractExchange) -> None:
         self.exchange = exchange
-        # # Retrieve all available trading pairs
+    
+    async def reset(self, date : datetime):
         self.pairs = await self.exchange.get_available_pairs()
         # Create a set for unique assets
         self.assets = set()
@@ -23,7 +24,7 @@ class ExchangeManager:
         for pair in self.pairs:
             self.graph[pair.asset].add(pair.quote_asset)
             self.graph[pair.quote_asset].add(pair.asset)  # Assuming you can trade in both directions
-        return self
+        
     
     def get_asset_path(self, from_asset, to_asset) -> list[Asset]:
         """

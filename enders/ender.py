@@ -1,7 +1,10 @@
 from abc import ABC, abstractmethod, abstractproperty
 import asyncio
 
-class AbstractEnder(ABC):
+from element import AbstractEnvironmentElement
+from utils.class_searcher import class_deep_search
+
+class AbstractEnder(AbstractEnvironmentElement, ABC):
     @abstractmethod
     async def check(self) -> tuple[bool , bool]:
         """_summary_
@@ -10,21 +13,17 @@ class AbstractEnder(ABC):
             tuple[bool , bool]: Return terminated, truncated
         """
         ...
+def check_is_ender(element):
+    print(element.__class__.__name__)
+    if element.__class__.__name__ == "HistoricalSimulation":
+        print(isinstance(element, AbstractEnder))
+    return isinstance(element, AbstractEnder)
 
-class CompositeEnder(AbstractEnder):
-    def __init__(self) -> None:
-        self.enders : list[AbstractEnder] = []
+def ender_deep_search(element) -> list[AbstractEnder]:
+    return class_deep_search(
+        condition = lambda element : isinstance(element, AbstractEnder),
+        element= element,
+        list_to_fill= [],
+        visited= []
+    )
 
-    async def check(self):
-        terminated, truncated = False, False
-        ender_tasks = []
-
-        async with asyncio.TaskGroup() as tg:
-            for ender in self.enders:
-                if id(ender) is not id(self): # To avoid infinite loop
-                    ender_tasks.append(tg.create_task(ender.check()))
-
-        for ender_task in ender_tasks:
-            ender_terminated, ender_truncated = ender_task.result()
-            terminated, truncated = (terminated or ender_terminated), (truncated or ender_truncated)
-        return terminated, truncated

@@ -1,25 +1,22 @@
 from core import Asset
 from .reward import AbstractReward
 from exchanges import AbstractExchange
-from utils.analyser import PortfolioAnalyser
+from managers.analyser import PortfolioManager
 from math import log
 
 class PerformanceReward(AbstractReward):
-    @classmethod
-    async def create(cls, exchange : AbstractExchange, quote_asset = Asset) -> None:
-        self = cls()
+    def __init__(self, exchange : AbstractExchange, quote_asset = Asset) -> None:
         self.exchange = exchange
         self.quote_asset = quote_asset
-        self.portfolio_analyser = await PortfolioAnalyser.create(exchange=exchange, quote_asset=quote_asset)
-        await self.reset()
-        return self
+        self.portfolio_manager = PortfolioManager(exchange=exchange, quote_asset=quote_asset)
 
-    async def reset(self):
+
+    async def reset(self, date):
         self.last_valuation = await self.__compute_valuation()
 
     async def __compute_valuation(self):
         current_portfolio = await self.exchange.get_portfolio()
-        return await self.portfolio_analyser.valuation(
+        return await self.portfolio_manager.valuation(
             portfolio= current_portfolio
         )
     async def get(self):

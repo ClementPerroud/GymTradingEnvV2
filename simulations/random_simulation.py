@@ -28,10 +28,10 @@ class RandomPairSimulation(AbstractPairSimulation):
         return interval_mean, interval_std
 
     
-    def reset(self, date : datetime) -> None:
+    async def reset(self, date : datetime) -> None:
         self._date = date
         self.last_close = self.initial_price_amount
-        super().reset(date= date)
+        await super().reset(date= date)
 
 
 
@@ -50,8 +50,8 @@ class RandomPairSimulation(AbstractPairSimulation):
         
 
 
-    def forward(self, date : datetime) -> None:
-        if date < self._date: raise ValueError("Can not go back in time unless the data are stored in the simulation memory (depending on memory size).")
+    async def forward(self, date : datetime) -> None:
+        await super().forward(date= date)
 
         interval : timedelta = date - self._date
         if abs(interval.total_seconds()) < 1E-5: return

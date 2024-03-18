@@ -1,18 +1,19 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
+from element import AbstractEnvironmentElement
 
-class AbstractPairSimulation(ABC):
+class AbstractPairSimulation(AbstractEnvironmentElement, ABC):
     def __init__(self, memory_size = 1000) -> None:
         super().__init__()
         self.memory_size = memory_size
 
     @abstractmethod
-    def reset(self, date : datetime) -> None:
+    async def reset(self, date : datetime) -> None:
         self.current_date = date
         self._data_memory = {}
 
     @abstractmethod
-    def forward(self, date : datetime) -> None:
+    async def forward(self, date : datetime) -> None:
         if date < self.current_date: raise ValueError(f"date must be ahead current date : {date < self.current_date}")
         self.current_date = date
 

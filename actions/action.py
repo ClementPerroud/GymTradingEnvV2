@@ -1,4 +1,5 @@
 from abc import abstractmethod, ABC
+from element import AbstractEnvironmentElement
 
 class AbstractAction(ABC):
     @abstractmethod

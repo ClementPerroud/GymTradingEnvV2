@@ -65,18 +65,19 @@ class HistoricalSimulation(AbstractPairSimulation, AbstractEnder):
             raise ValueError("on_missing_date must be in ['error', 'warn', None].")
         self.on_missing_date = on_missing_date
 
-    def reset(self, date : datetime) -> None:
+    async def reset(self, date : datetime) -> None:
         np_date = np.datetime64(date)
-        self.past_index = np.searchsorted(self.dates, np_date, side="left")
+        if np_date >= self.dates[-1] or np_date <= self.dates[0]: raise ValueError(f"This date {date} is not valid. Please select a date between {self.dates[0]} and {self.dates[-1]}")
 
-        super().reset(date= date)
+        self.past_index = np.searchsorted(self.dates, np_date, side="left")
+        await super().reset(date= date)
 
     def __aggregrate(self, array: np.ndarray):
         return {col : agg(array) for col, agg in self.aggregation.items()}
         
-    def forward(self, date : datetime) -> None:
+    async def forward(self, date : datetime) -> None:
         np_date = np.datetime64(date)
-        super().forward(date= date)
+        await super().forward(date= date)
 
         index = np.searchsorted(self.dates, np_date, side="left")
         if np_date != self.dates[index]: 
@@ -92,6 +93,6 @@ class HistoricalSimulation(AbstractPairSimulation, AbstractEnder):
         self.update_memory(date=date, data=data)
 
     async def check(self) -> tuple[bool, bool]:
-        return False, self.past_index + self.last_index_gap + 1 >= self.data_array_len
+        return False, (self.past_index + self.last_index_gap + 1) >= self.data_array_len
 
         

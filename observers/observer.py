@@ -1,8 +1,14 @@
 import numpy as np
-from abc import ABC, abstractmethod
+from datetime import datetime, timedelta
+from abc import ABC, abstractmethod, abstractproperty
 from gymnasium.spaces import Space
+from element import AbstractEnvironmentElement
 
-class AbstractObserver(ABC):
+class AbstractObserver(AbstractEnvironmentElement, ABC):
+    @abstractmethod
+    async def get_obs_at_date(self, date : datetime) -> np.ndarray:
+        pass
+
     @abstractmethod
     async def get_obs(self) -> np.ndarray:
         pass
@@ -11,9 +17,7 @@ class AbstractObserver(ABC):
     def observation_space(self) -> Space:
         ...
     
-    @property
-    @abstractmethod
+    @abstractproperty
     def observation_lookback(self) -> int:
         ...
 
-    

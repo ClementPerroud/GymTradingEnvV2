@@ -2,25 +2,22 @@ from decimal import Decimal
 import asyncio
 
 from .action import AbstractAction
-from utils.analyser import PortfolioAnalyser
+from managers.analyser import PortfolioManager
 from exchanges import AbstractExchange
 from core import Asset, Pair, Value, PortfolioExposition
-from utils.exchange_manager import ExchangeManager
+from managers.exchange import ExchangeManager
 
 class DiscreteExpositionAction(AbstractAction):
-    @classmethod
-    async def create(cls, target_exposition : dict[Asset, Decimal], exchange : AbstractExchange, quote_asset : Asset):
-        self = cls()
+    def __init__(self, target_exposition : dict[Asset, Decimal], exchange : AbstractExchange, quote_asset : Asset):
         self.target_exposition = PortfolioExposition(
                 expositions= target_exposition
             )
         self.exchange = exchange
-        self.portfolio_analyser = await PortfolioAnalyser.create(
+        self.portfolio_manager = PortfolioManager(
             exchange= exchange,
             quote_asset = quote_asset
         )
-        self.order_mananger = await ExchangeManager.create(exchange= self.exchange)
-        return self
+        self.order_manager = ExchangeManager(exchange= self.exchange)
 
     async def execute_order(self, asset_to_decrease : Asset, asset_to_increase : Asset, quantity_quote_asset : Value):
         quote_asset = quantity_quote_asset.asset
@@ -30,7 +27,7 @@ class DiscreteExpositionAction(AbstractAction):
             quantity_asset = - quantity_quote_asset * (await self.exchange.get_quotation(pair = Pair(asset_to_decrease, quote_asset= quote_asset))).reverse()
 
         pair = Pair(asset= asset_to_increase, quote_asset= asset_to_decrease)
-        await self.order_mananger.market_order(
+        await self.order_manager.market_order(
             quantity= quantity_asset,
             pair = pair
         )
@@ -38,10 +35,10 @@ class DiscreteExpositionAction(AbstractAction):
     async def execute(self):
         current_position = await self.exchange.get_portfolio()
         async with asyncio.TaskGroup() as tg:
-            total_valuation_task = tg.create_task(self.portfolio_analyser.valuation(
+            total_valuation_task = tg.create_task(self.portfolio_manager.valuation(
                 portfolio= current_position
             ))
-            current_exposition_task = tg.create_task(self.portfolio_analyser.exposition(
+            current_exposition_task = tg.create_task(self.portfolio_manager.exposition(
                 portfolio= current_position
             ))
         total_valuation : Value = total_valuation_task.result()

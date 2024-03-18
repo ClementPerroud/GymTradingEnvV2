@@ -8,6 +8,7 @@ from rewards import AbstractReward
 from actions  import AbstractActionManager
 from observers  import AbstractObserver
 from enders import AbstractEnder, CompositeEnder, ender_deep_search
+from element import AbstractEnvironmentElement, element_deep_search
 
 class TradingEnv(gym.Env, CompositeEnder):
     def __init__(self,
@@ -23,21 +24,27 @@ class TradingEnv(gym.Env, CompositeEnder):
         self.observer = observer
         self.reward = reward
 
+        self.env_elements = element_deep_search(self)
+
         # Implement enders for CompositeEnder class
         self.enders = ender_deep_search(self) + enders
+
         self.action_space = self.action_manager.action_space()
         self.observation_space = self.observer.observation_space()
 
-
-    
     async def reset(self, date : datetime, seed = None):
         self.__step = 0
         super().reset(seed = seed)
-        await self.time_manager.reset(date= date)
+
+        for element in self.env_elements:
+            element : AbstractEnvironmentElement
+            await element.reset(date= date)
 
         # Go though the step needed for the observer to work
         for _ in range(self.observer.observation_lookback):
             await self.time_manager.step()
+            terminated, truncated = await self.check()
+            if terminated or truncated: raise ValueError("Your environment has been terminated or truncated during initialization.")
 
         return None,  {}
         # return (await self.observer.get_obs()), {}

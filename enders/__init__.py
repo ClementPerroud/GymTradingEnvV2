@@ -1,3 +1,3 @@
-from .ender import AbstractEnder, CompositeEnder
+from .ender import AbstractEnder, ender_deep_search
+from .composite_ender import CompositeEnder
 from .valuation_ender import ValuationEnder
-from .enders_search import ender_deep_search

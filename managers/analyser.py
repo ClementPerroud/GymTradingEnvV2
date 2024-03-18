@@ -1,41 +1,34 @@
 from functools import lru_cache
 from decimal import Decimal
 import asyncio
+from datetime import datetime
 
 from exchanges import AbstractExchange
 from core import Portfolio, PortfolioExposition, Pair, Asset, Value
 from utils.singleton import SingletonOnArgs
-from .exchange_manager import ExchangeManager
+from .exchange import ExchangeManager
 
-class PositionAnalyser(metaclass = SingletonOnArgs):
-    @classmethod
-    async def create(cls, exchange : AbstractExchange, quote_asset : Asset) -> None:
-        self = cls()
+class PositionManager(metaclass = SingletonOnArgs):
+    def __init__(self, exchange : AbstractExchange, quote_asset : Asset) -> None:
         self.exchange = exchange
         self.quote_asset = quote_asset
-        self.exchange_manager = await ExchangeManager.create(exchange= self.exchange)
-        return self
-
-    
+        
     async def valuation(self, position : Value) -> Value:
         if position.asset == self.quote_asset: return position
         return position * await self.exchange.get_quotation(
             pair = Pair(asset= position.asset, quote_asset= self.quote_asset)
         )
     
-class PortfolioAnalyser(metaclass = SingletonOnArgs):
-    @classmethod
-    async def create(cls, exchange : AbstractExchange, quote_asset : Asset) -> None:
-        self = cls()
+class PortfolioManager(metaclass = SingletonOnArgs):
+    def __init__(self, exchange : AbstractExchange, quote_asset : Asset) -> None:
         self.exchange = exchange
         self.quote_asset = quote_asset
-        self.position_analyser = await PositionAnalyser.create(exchange= self.exchange, quote_asset= self.quote_asset)
-        return self
+        self.position_manager = PositionManager(exchange= self.exchange, quote_asset= self.quote_asset)
 
     async def __valuations(self, portfolio : Portfolio) -> dict[Asset, Value]:
         async with asyncio.TaskGroup() as tg:
             asset_valuation_task = {
-                position.asset : tg.create_task(self.position_analyser.valuation(position))
+                position.asset : tg.create_task(self.position_manager.valuation(position))
                     for position in portfolio.get_positions()
             }
         return {
@@ -44,7 +37,7 @@ class PortfolioAnalyser(metaclass = SingletonOnArgs):
         }
     
     async def valuation(self, portfolio : Portfolio) -> Value:
-        _sum = Value(Decimal('0'), self.position_analyser.quote_asset)
+        _sum = Value(Decimal('0'), self.position_manager.quote_asset)
         for value in (await self.__valuations(portfolio = portfolio)).values():
             _sum += value
         return _sum
