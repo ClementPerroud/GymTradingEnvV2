@@ -14,9 +14,7 @@ class AbstractEnder(AbstractEnvironmentElement, ABC):
         """
         ...
 def check_is_ender(element):
-    print(element.__class__.__name__)
     if element.__class__.__name__ == "HistoricalSimulation":
-        print(isinstance(element, AbstractEnder))
     return isinstance(element, AbstractEnder)
 
 def ender_deep_search(element) -> list[AbstractEnder]:

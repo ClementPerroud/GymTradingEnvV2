@@ -99,8 +99,7 @@ async def main():
         action = action_manager.action_space().sample()
         obs, reward, terminated, truncated, infos = await trading_environment.step(action= action)
         step += 1
-        await asyncio.sleep(1)
-
+        
     end = time.time()
     print(f"{step} step in {end - start :0.2f} seconds : {(end-start) / step * 1000 : 0.2f} s / 1 000 steps")
 

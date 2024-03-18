@@ -32,13 +32,11 @@ class RecurrentObserver(AbstractObserver):
     async def get_obs(self) -> list:
         # Update
         new_obs = await self.sub_observer.get_obs()
-        print(await self.time_manager.get_current_datetime(), new_obs)
         self.memory.append(new_obs)
         self.memory.pop(0)
 
         # Check for missing values
         self.memory = await self.__fill_missing_historical_values(obs_list= self.memory)
-        print(np.array(self.memory, dtype= float))
         return np.array(self.memory, dtype= float)
         
     async def get_obs_at_date(self, date : datetime) -> list:
