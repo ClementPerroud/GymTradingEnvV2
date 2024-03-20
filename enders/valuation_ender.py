@@ -1,6 +1,6 @@
-from exchanges import AbstractExchange
-from managers.analyser import PortfolioManager
-from core import Value
+from ..exchanges import AbstractExchange
+from ..managers.analyser import PortfolioManager
+from ..core import Value
 
 from .ender import AbstractEnder
 

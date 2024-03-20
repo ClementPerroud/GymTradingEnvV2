@@ -3,7 +3,7 @@ from datetime import datetime
 from decimal import Decimal
 from copy import deepcopy
 
-from settings import SETTINGS
+from ..settings import SETTINGS
 from .asset import Asset
 from .value import Value
 

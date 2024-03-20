@@ -1,4 +1,4 @@
-from core import Pair
+from ..core import Pair
 
 class PairNotFound(Exception):
     def __init__(self, pair : Pair) -> None:

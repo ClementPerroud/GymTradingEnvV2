@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-from core import Quotation, Value
+from ...core import Quotation, Value
 from .response import AbstractResponse
 
 @dataclass

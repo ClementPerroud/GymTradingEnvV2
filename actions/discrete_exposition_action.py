@@ -2,10 +2,10 @@ from decimal import Decimal
 import asyncio
 
 from .action import AbstractAction
-from managers.analyser import PortfolioManager
-from exchanges import AbstractExchange
-from core import Asset, Pair, Value, PortfolioExposition
-from managers.exchange import ExchangeManager
+from ..managers.analyser import PortfolioManager
+from ..exchanges import AbstractExchange
+from ..core import Asset, Pair, Value, PortfolioExposition
+from ..managers.exchange import ExchangeManager
 
 class DiscreteExpositionAction(AbstractAction):
     def __init__(self, target_exposition : dict[Asset, Decimal], exchange : AbstractExchange, quote_asset : Asset):

@@ -1,9 +1,9 @@
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
-from simulations import AbstractPairSimulation
 
+from ..simulations import AbstractPairSimulation
 from .time_manager import AbstractTimeManager
-from enders import AbstractEnder
+from ..enders import AbstractEnder
 
 class IntervalSimulationTimeManager(AbstractTimeManager):
     def __init__(self, interval : timedelta | relativedelta) -> None:

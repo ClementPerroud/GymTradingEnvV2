@@ -3,9 +3,9 @@ from decimal import Decimal
 import asyncio
 from datetime import datetime
 
-from exchanges import AbstractExchange
-from core import Portfolio, PortfolioExposition, Pair, Asset, Value
-from utils.singleton import SingletonOnArgs
+from ..exchanges import AbstractExchange
+from ..core import Portfolio, PortfolioExposition, Pair, Asset, Value
+from ..utils.singleton import SingletonOnArgs
 from .exchange import ExchangeManager
 
 class PositionManager(metaclass = SingletonOnArgs):

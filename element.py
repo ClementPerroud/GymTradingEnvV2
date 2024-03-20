@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
-from utils.class_searcher import class_deep_search
+from .utils.class_searcher import class_deep_search
 
 class AbstractEnvironmentElement(ABC):
     async def reset(self, date : datetime):

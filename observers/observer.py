@@ -2,7 +2,8 @@ import numpy as np
 from datetime import datetime, timedelta
 from abc import ABC, abstractmethod, abstractproperty
 from gymnasium.spaces import Space
-from element import AbstractEnvironmentElement
+
+from ..element import AbstractEnvironmentElement
 
 class AbstractObserver(AbstractEnvironmentElement, ABC):
     @abstractmethod

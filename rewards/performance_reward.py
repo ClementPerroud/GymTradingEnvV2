@@ -1,8 +1,10 @@
-from core import Asset
-from .reward import AbstractReward
-from exchanges import AbstractExchange
-from managers.analyser import PortfolioManager
 from math import log
+
+from ..core import Asset
+from .reward import AbstractReward
+from ..exchanges import AbstractExchange
+from ..managers.analyser import PortfolioManager
+
 
 class PerformanceReward(AbstractReward):
     def __init__(self, exchange : AbstractExchange, quote_asset = Asset) -> None:

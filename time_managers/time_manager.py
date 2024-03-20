@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
-from element import AbstractEnvironmentElement
+from ..element import AbstractEnvironmentElement
 
 class AbstractTimeManager(AbstractEnvironmentElement, ABC):
     @abstractmethod

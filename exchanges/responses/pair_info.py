@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from decimal import Decimal
 
-from core import Pair
+from ...core import Pair
 from .response import AbstractResponse
 
 

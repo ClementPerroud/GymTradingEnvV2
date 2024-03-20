@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 from .response import AbstractResponse
-from core import Pair, Value, Quotation
+from ...core import Pair, Value, Quotation
 
 @dataclass
 class OrderResponse(AbstractResponse):

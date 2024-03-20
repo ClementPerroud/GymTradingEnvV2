@@ -2,7 +2,7 @@
 from decimal import Decimal
 
 from .asset import Asset
-from settings import SETTINGS
+from ..settings import SETTINGS
 
 from copy import copy
 

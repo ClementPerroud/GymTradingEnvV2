@@ -6,7 +6,7 @@ from functools import partial
 from warnings import warn
 
 from .simulation import AbstractPairSimulation
-from enders import AbstractEnder
+from ..enders import AbstractEnder
 
 
 

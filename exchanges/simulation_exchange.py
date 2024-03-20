@@ -4,9 +4,9 @@ from copy import deepcopy
 from functools import lru_cache
 from async_lru import alru_cache
 
-from core import Pair, Quotation, Portfolio, Value
-from simulations.simulation import AbstractPairSimulation
-from time_managers import AbstractTimeManager
+from ..core import Pair, Quotation, Portfolio, Value
+from ..simulations.simulation import AbstractPairSimulation
+from ..time_managers import AbstractTimeManager
 
 from .responses import OrderResponse, TickerResponse
 from .exceptions import PairNotFound

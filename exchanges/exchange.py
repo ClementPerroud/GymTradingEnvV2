@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod, abstractproperty
 from decimal import Decimal
 from datetime import datetime
 
-from core import Pair, Quotation, Portfolio
+from ..core import Pair, Quotation, Portfolio
 
 from .responses import OrderResponse, TickerResponse
 from .exceptions import PairNotFound

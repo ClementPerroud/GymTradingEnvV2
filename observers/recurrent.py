@@ -4,7 +4,7 @@ import asyncio
 from datetime import datetime, timedelta
 from gymnasium.spaces import Space,Box
 
-from time_managers import AbstractTimeManager
+from ..time_managers import AbstractTimeManager
 from .observer import AbstractObserver
 
 class RecurrentObserver(AbstractObserver):

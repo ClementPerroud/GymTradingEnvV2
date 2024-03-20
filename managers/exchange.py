@@ -2,10 +2,10 @@ import asyncio
 from functools import lru_cache
 from datetime import datetime
 
-from element import AbstractEnvironmentElement
-from exchanges import AbstractExchange
-from exchanges.responses import OrderResponse
-from core import Pair, Asset, Value
+from ..element import AbstractEnvironmentElement
+from ..exchanges import AbstractExchange
+from ..exchanges.responses import OrderResponse
+from ..core import Pair, Asset, Value
 
 class ExchangeManager(AbstractEnvironmentElement):
     def __init__(self, exchange: AbstractExchange) -> None:

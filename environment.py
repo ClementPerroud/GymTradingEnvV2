@@ -3,12 +3,13 @@ from typing import Any, Self
 import gymnasium as gym
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
-from time_managers import AbstractTimeManager
-from rewards import AbstractReward
-from actions  import AbstractActionManager
-from observers  import AbstractObserver
-from enders import AbstractEnder, CompositeEnder, ender_deep_search
-from element import AbstractEnvironmentElement, element_deep_search
+
+from .time_managers import AbstractTimeManager
+from .rewards import AbstractReward
+from .actions  import AbstractActionManager
+from .observers  import AbstractObserver
+from .enders import AbstractEnder, CompositeEnder, ender_deep_search
+from .element import AbstractEnvironmentElement, element_deep_search
 
 class TradingEnv(gym.Env, CompositeEnder):
     def __init__(self,

@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod, abstractproperty
 import asyncio
 
-from element import AbstractEnvironmentElement
-from utils.class_searcher import class_deep_search
+from ..element import AbstractEnvironmentElement
+from ..utils.class_searcher import class_deep_search
 
 class AbstractEnder(AbstractEnvironmentElement, ABC):
     @abstractmethod

@@ -3,15 +3,15 @@ from datetime import datetime, timedelta
 import pandas as pd
 import numpy as np
 
-from environment import TradingEnv
-from time_managers import IntervalSimulationTimeManager
-from simulations import RandomPairSimulation, HistoricalSimulation
-from exchanges import SimulationExchange
-from actions import DiscreteActionManager, DiscreteExpositionAction, DiscreteDoNothing
-from observers import TickerObserver, RecurrentObserver
-from rewards import PerformanceReward
-from enders import ValuationEnder
-from core import Portfolio, Asset, Value, Pair
+from .environment import TradingEnv
+from .time_managers import IntervalSimulationTimeManager
+from .simulations import RandomPairSimulation, HistoricalSimulation
+from .exchanges import SimulationExchange
+from .actions import DiscreteActionManager, DiscreteExpositionAction, DiscreteDoNothing
+from .observers import TickerObserver, RecurrentObserver
+from .rewards import PerformanceReward
+from .enders import ValuationEnder
+from .core import Portfolio, Asset, Value, Pair
 
 
 async def main():

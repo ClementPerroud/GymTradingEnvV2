@@ -3,10 +3,10 @@ import numpy as np
 from datetime import datetime, timedelta
 import asyncio
 
-from exchanges import AbstractExchange
-from exchanges.responses import TickerResponse
-from time_managers import AbstractTimeManager
-from core import Pair
+from ..exchanges import AbstractExchange
+from ..exchanges.responses import TickerResponse
+from ..time_managers import AbstractTimeManager
+from ..core import Pair
 
 from .observer import AbstractObserver
 

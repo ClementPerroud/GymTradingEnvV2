@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
-from element import AbstractEnvironmentElement
+from ..element import AbstractEnvironmentElement
 
 class AbstractPairSimulation(AbstractEnvironmentElement, ABC):
     def __init__(self, memory_size = 1000) -> None:
