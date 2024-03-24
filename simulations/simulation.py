@@ -8,7 +8,7 @@ class AbstractPairSimulation(AbstractEnvironmentElement, ABC):
         self.memory_size = memory_size
 
     @abstractmethod
-    async def reset(self, date : datetime) -> None:
+    async def reset(self, date : datetime, seed = None) -> None:
         self.current_date = date
         self._data_memory = {}
 

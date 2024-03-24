@@ -4,51 +4,43 @@ import gymnasium as gym
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
-from .time_managers import AbstractTimeManager
-from .rewards import AbstractReward
-from .actions  import AbstractActionManager
-from .observers  import AbstractObserver
-from .enders import AbstractEnder, CompositeEnder, ender_deep_search
-from .element import AbstractEnvironmentElement, element_deep_search
+from .abstract_trading_env import AbstractTradingEnv
+from ..time_managers import AbstractTimeManager
+from ..exchanges import AbstractExchange
+from ..rewards import AbstractReward
+from ..actions  import AbstractActionManager
+from ..observers  import AbstractObserver
+from ..enders import AbstractEnder, CompositeEnder, ender_deep_search
 
-class TradingEnv(gym.Env, CompositeEnder):
+class RLTradingEnv(AbstractTradingEnv, CompositeEnder):
+    instances = {}
     def __init__(self,
             time_manager : AbstractTimeManager,
+            exchange : AbstractExchange,
             action_manager : AbstractActionManager,
             observer : AbstractObserver,
             reward : AbstractReward,
             enders : list[AbstractEnder] = []
         ) -> None:
-        super().__init__()
-        self.time_manager = time_manager
+        
+        super().__init__(time_manager= time_manager, exchange= exchange)
+
         self.action_manager = action_manager
         self.observer = observer
         self.reward = reward
-
-        self.env_elements = element_deep_search(self)
 
         # Implement enders for CompositeEnder class
         self.enders = ender_deep_search(self) + enders
 
         self.action_space = self.action_manager.action_space()
         self.observation_space = self.observer.observation_space()
+    
 
     async def reset(self, date : datetime, seed = None):
         self.__step = 0
-        super().reset(seed = seed)
-
-        for element in self.env_elements:
-            element : AbstractEnvironmentElement
-            await element.reset(date= date)
-
-        # Go though the step needed for the observer to work
-        for _ in range(self.observer.observation_lookback):
-            await self.time_manager.step()
-            terminated, truncated = await self.check()
-            if terminated or truncated: raise ValueError("Your environment has been terminated or truncated during initialization.")
-
-        return None,  {}
-        # return (await self.observer.get_obs()), {}
+        await super().reset(date= date, seed = seed)
+        
+        return (await self.observer.get_obs()), {}
 
     async def step(self, action : Any):
         # At t : execute action

@@ -12,7 +12,7 @@ class AbstractTimeManager(AbstractEnvironmentElement, ABC):
         ...
 
     @abstractmethod
-    async def reset(self, date : datetime) -> None:
+    async def reset(self, date : datetime, seed = None) -> None:
         ...
 
     @abstractmethod

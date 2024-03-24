@@ -11,11 +11,14 @@ from ..core import Pair
 from .observer import AbstractObserver
 
 class TickerObserver(AbstractObserver):
-    def __init__(self, pair : Pair, exchange : AbstractExchange, time_manager :  AbstractTimeManager) -> None:
+    def __init__(self, pair : Pair) -> None:
         super().__init__()
-        self.exchange = exchange
-        self.time_manager = time_manager
+
         self.pair = pair
+
+    async def reset(self, date : datetime, seed = None) -> None:
+        self.time_manager = self.get_trading_env().time_manager
+        self.exchange = self.get_trading_env().exchange
     
     @property
     def observation_lookback(self):
@@ -27,13 +30,13 @@ class TickerObserver(AbstractObserver):
     async def get_obs(self):
         previous_ticker_date_close = await self.time_manager.get_historical_datetime(step_back= 1)
         ticker : TickerResponse  = await self.exchange.get_ticker(self.pair)
-        previous_ticker : TickerResponse  = await self.exchange.get_ticker_at_date(pair = self.pair, date_close= previous_ticker_date_close)
+        previous_ticker : TickerResponse  = await self.exchange.get_ticker(pair = self.pair, date= previous_ticker_date_close)
         return self.__get_obs_from_tickers(ticker= ticker, previous_ticker= previous_ticker)
 
     async def get_obs_at_date(self, date : datetime):
-        ticker : TickerResponse  = await self.exchange.get_ticker_at_date(pair = self.pair, date_close= date)
+        ticker : TickerResponse  = await self.exchange.get_ticker(pair = self.pair, date= date)
         previous_ticker_date_close = await self.time_manager.get_historical_datetime(step_back= 1, relative_date= date)
-        previous_ticker : TickerResponse  = await self.exchange.get_ticker_at_date(pair = self.pair, date_close= previous_ticker_date_close)
+        previous_ticker : TickerResponse  = await self.exchange.get_ticker(pair = self.pair, date= previous_ticker_date_close)
         return self.__get_obs_from_tickers(ticker= ticker, previous_ticker= previous_ticker)
 
     def __get_obs_from_tickers(self, ticker : TickerResponse, previous_ticker : TickerResponse):

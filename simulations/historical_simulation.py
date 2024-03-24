@@ -65,15 +65,17 @@ class HistoricalSimulation(AbstractPairSimulation, AbstractEnder):
             raise ValueError("on_missing_date must be in ['error', 'warn', None].")
         self.on_missing_date = on_missing_date
 
-    async def reset(self, date : datetime) -> None:
+    async def reset(self, date : datetime, seed = None) -> None:
         np_date = np.datetime64(date)
         if np_date >= self.dates[-1] or np_date <= self.dates[0]: raise ValueError(f"This date {date} is not valid. Please select a date between {self.dates[0]} and {self.dates[-1]}")
 
         self.past_index = np.searchsorted(self.dates, np_date, side="left")
-        await super().reset(date= date)
-
+        self.past_date = date
+        await super().reset(date= date, seed = seed)
+        
     def __aggregrate(self, array: np.ndarray):
         return {col : agg(array) for col, agg in self.aggregation.items()}
+
         
     async def forward(self, date : datetime) -> None:
         np_date = np.datetime64(date)
@@ -86,11 +88,21 @@ class HistoricalSimulation(AbstractPairSimulation, AbstractEnder):
             elif self.on_missing_date == "error" : ValueError(message)
         
         array = self.data_array[self.past_index + 1:index + 1]
-        self.last_index_gap = index - self.past_index
-        self.past_index = index
-
+        index_gap = index - self.past_index
+        if index_gap <= 0: 
+            raise ValueError(f"""
+                Could not find any data to aggregate between {self.past_date} and {date}.
+                Please increase you interval or increase the granularity of the dataframe. """)
+    
         data = self.__aggregrate(array=array)
+
+
         self.update_memory(date=date, data=data)
+
+        self.last_index_gap = index_gap
+        self.past_index = index
+        self.past_date = date
+
 
     async def check(self) -> tuple[bool, bool]:
         return False, (self.past_index + self.last_index_gap + 1) >= self.data_array_len

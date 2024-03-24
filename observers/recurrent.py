@@ -8,17 +8,19 @@ from ..time_managers import AbstractTimeManager
 from .observer import AbstractObserver
 
 class RecurrentObserver(AbstractObserver):
-    def __init__(self, sub_observer : AbstractObserver, time_manager : AbstractTimeManager, window : int) -> None:
+    def __init__(self, sub_observer : AbstractObserver, window : int) -> None:
         super().__init__()
         self.sub_observer = sub_observer
-        self.time_manager = time_manager
         self.window = window
 
-        self.memory = [None for _ in range(window)]
+        
+    async def reset(self, date : datetime, seed = None) -> None:
+        self.time_manager = self.get_trading_env().time_manager
+        self.memory = [None for _ in range(self.window)]
     
     @property
-    def observation_lookback(self):
-        return self.sub_observer.observation_lookback + self.window - 1
+    def simulation_warmup_steps(self):
+        return self.sub_observer.simulation_warmup_steps + self.window
     
     def observation_space(self) -> Space:
         # Auto determination of the observation_space

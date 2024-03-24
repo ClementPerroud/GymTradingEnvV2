@@ -2,9 +2,10 @@
 from abc import abstractmethod, ABC
 from typing import TypeVar
 from gymnasium.spaces import Space
+from ..element import AbstractEnvironmentElement
 ActType = TypeVar("ActType")
 
-class AbstractActionManager(ABC):
+class AbstractActionManager(AbstractEnvironmentElement, ABC):
     @abstractmethod
     async def execute(self, action : ActType) -> None:
         pass

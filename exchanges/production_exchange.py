@@ -12,13 +12,11 @@ from .exceptions import PairNotFound
 from .exchange import AbstractExchange
 
 class BinanceProductionExchange(AbstractExchange):
-    async def get_ticker_at_date(self, pair : Pair, date_close : datetime) -> TickerResponse:
-        ...
     
     async def get_available_pairs(self) -> list[Pair]:
         ...
     
-    async def get_ticker(self, pair : Pair) -> TickerResponse:
+    async def get_ticker(self, pair : Pair, date : datetime = None) -> TickerResponse:
         ...
     
     async def get_portfolio(self) -> Portfolio:

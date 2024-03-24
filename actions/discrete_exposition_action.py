@@ -1,5 +1,6 @@
 from decimal import Decimal
 import asyncio
+from datetime import datetime
 
 from .action import AbstractAction
 from ..managers.analyser import PortfolioManager
@@ -8,16 +9,14 @@ from ..core import Asset, Pair, Value, PortfolioExposition
 from ..managers.exchange import ExchangeManager
 
 class DiscreteExpositionAction(AbstractAction):
-    def __init__(self, target_exposition : dict[Asset, Decimal], exchange : AbstractExchange, quote_asset : Asset):
-        self.target_exposition = PortfolioExposition(
-                expositions= target_exposition
-            )
-        self.exchange = exchange
-        self.portfolio_manager = PortfolioManager(
-            exchange= exchange,
-            quote_asset = quote_asset
-        )
-        self.order_manager = ExchangeManager(exchange= self.exchange)
+    def __init__(self, target_exposition : dict[Asset, Decimal], quote_asset : Asset):
+        self.quote_asset = quote_asset
+        self.target_exposition = PortfolioExposition(expositions= target_exposition)
+        self.portfolio_manager = PortfolioManager(quote_asset = self.quote_asset)
+        self.order_manager = ExchangeManager()
+        
+    async def reset(self, date : datetime, seed = None):
+        self.exchange = self.get_trading_env().exchange
 
     async def execute_order(self, asset_to_decrease : Asset, asset_to_increase : Asset, quantity_quote_asset : Value):
         quote_asset = quantity_quote_asset.asset

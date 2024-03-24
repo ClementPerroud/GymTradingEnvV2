@@ -1,23 +1,39 @@
+from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
 from ..simulations import AbstractPairSimulation
 from .time_manager import AbstractTimeManager
-from ..enders import AbstractEnder
 
-class IntervalSimulationTimeManager(AbstractTimeManager):
-    def __init__(self, interval : timedelta | relativedelta) -> None:
+
+class SimulationTimeManager(AbstractTimeManager, ABC):
+    def __init__(self) -> None:
         super().__init__()
-        self.interval = interval
-        self.__simulations : list[AbstractPairSimulation] = []
 
     def add_simulation(self, simulation : AbstractPairSimulation):
         self.__simulations.append(simulation)
 
-    async def reset(self, date : datetime):
-        self.__current_datetime = date
+    @abstractmethod
+    async def reset(self, date : datetime, seed = None)->None:
+        self.__simulations : list[AbstractPairSimulation] = []
+    
+    @abstractmethod
+    async def forward(self, date : datetime):
         for simultation in self.__simulations:
-            await simultation.reset(date = self.__current_datetime)
+            await simultation.forward(date= date)
+        
+
+
+
+class IntervalSimulationTimeManager(SimulationTimeManager):
+    def __init__(self, interval : timedelta | relativedelta) -> None:
+        super().__init__()
+        self.interval = interval
+
+    async def reset(self, date : datetime, seed = None)->None:
+        await super().reset(date= date, seed= seed)
+        self.__current_datetime = date
+        
 
     async def get_current_datetime(self) -> datetime:
         return self.__current_datetime
@@ -34,8 +50,7 @@ class IntervalSimulationTimeManager(AbstractTimeManager):
 
 
     async def forward(self, date : datetime):
-        for simultation in self.__simulations:
-            await simultation.forward(date= date)
+        await super().forward(date= date)
         self.__current_datetime = date
         
 

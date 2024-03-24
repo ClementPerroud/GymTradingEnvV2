@@ -16,30 +16,33 @@ class SimulationExchange(AbstractExchange):
     pair_symbol_separator = ""
 
     def __init__(self,
-                 time_manager : AbstractTimeManager,
+                 initial_portfolio : Portfolio, 
                  pair_simulations : dict[Pair, AbstractPairSimulation], 
-                 initial_portfolio = Portfolio, 
                  trading_fees_pct = Decimal('0.001')# Binance fees 0.1%
         ):
-        self.time_manager = time_manager
         self.pair_simulations = pair_simulations
-        self.portfolio = initial_portfolio
+        self.initial_portfolio = initial_portfolio
         self.trading_fees_ratio = Decimal('1') - trading_fees_pct
 
+    async def reset(self, date : datetime, seed = None):
+        self.portfolio = deepcopy(self.initial_portfolio)
+        self.time_manager : AbstractTimeManager = self.get_trading_env().time_manager
+        await self.time_manager.reset(date=date, seed= seed)
         for pair_simulation in self.pair_simulations.values():
             self.time_manager.add_simulation(simulation= pair_simulation)
-
+        
     async def get_available_pairs(self) -> list[Pair]: 
         return list(self.pair_simulations.keys())
     
-    async def get_ticker_at_date(self, pair : Pair, date_close : datetime) -> TickerResponse:
-        if pair not in self.pair_simulations :
-            raise PairNotFound(pair= pair)
-        data = self.pair_simulations[pair].get_data(date = date_close)
+    async def get_ticker(self, pair : Pair, date : datetime = None) -> TickerResponse:
+        if pair not in self.pair_simulations : raise PairNotFound(pair= pair)
+        if date is None:date = await self.time_manager.get_current_datetime()
+
+        data = self.pair_simulations[pair].get_data(date = date)
         return TickerResponse(
             status_code = 200,
-            date_open= date_close - self.time_manager.interval,
-            date_close= date_close,
+            date_open= await self.time_manager.get_historical_datetime(step_back=1),
+            date_close= date,
             open = Quotation(Decimal(data["open"]), pair),
             high = Quotation(Decimal(data["high"]), pair),
             low = Quotation(Decimal(data["low"]), pair),
@@ -47,12 +50,7 @@ class SimulationExchange(AbstractExchange):
             volume = Value(Decimal(data["volume"]), pair.asset),
             price = Quotation(Decimal(data["close"]), pair),
         )
-    
-    async def get_ticker(self, pair : Pair) -> TickerResponse:
-        return await self.get_ticker_at_date(
-            pair = pair,
-            date_close = await self.time_manager.get_current_datetime()
-        )
+
     
     async def get_portfolio(self) -> Portfolio:
         return deepcopy(self.portfolio)

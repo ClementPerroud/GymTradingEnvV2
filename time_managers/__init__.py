@@ -1,2 +1,2 @@
 from .time_manager import AbstractTimeManager
-from .simulation_time_manager import IntervalSimulationTimeManager
+from .simulation_time_manager import SimulationTimeManager, IntervalSimulationTimeManager

@@ -8,10 +8,11 @@ from ..exchanges.responses import OrderResponse
 from ..core import Pair, Asset, Value
 
 class ExchangeManager(AbstractEnvironmentElement):
-    def __init__(self, exchange: AbstractExchange) -> None:
-        self.exchange = exchange
+    def __init__(self) -> None:
+        pass
     
-    async def reset(self, date : datetime):
+    async def reset(self, date : datetime, seed = None):
+        self.exchange = self.get_trading_env().exchange
         self.pairs = await self.exchange.get_available_pairs()
         # Create a set for unique assets
         self.assets = set()

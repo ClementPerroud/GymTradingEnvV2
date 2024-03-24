@@ -21,6 +21,7 @@ def ender_deep_search(element) -> list[AbstractEnder]:
         condition = lambda element : isinstance(element, AbstractEnder),
         element= element,
         list_to_fill= [],
-        visited= []
+        visited= [],
+        excluded= [element]
     )
 

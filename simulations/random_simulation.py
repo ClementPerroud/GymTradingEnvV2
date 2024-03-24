@@ -28,10 +28,10 @@ class RandomPairSimulation(AbstractPairSimulation):
         return interval_mean, interval_std
 
     
-    async def reset(self, date : datetime) -> None:
+    async def reset(self, date : datetime, seed = None) -> None:
         self._date = date
         self.last_close = self.initial_price_amount
-        await super().reset(date= date)
+        await super().reset(date= date, seed = seed)
 
 
 

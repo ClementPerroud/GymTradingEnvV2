@@ -17,8 +17,4 @@ class AbstractObserver(AbstractEnvironmentElement, ABC):
     @abstractmethod
     def observation_space(self) -> Space:
         ...
-    
-    @abstractproperty
-    def observation_lookback(self) -> int:
-        ...
 
