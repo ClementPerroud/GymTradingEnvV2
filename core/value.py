@@ -1,13 +1,13 @@
 
 from decimal import Decimal
-
+from typing import Union
 from .asset import Asset
 from ..settings import SETTINGS
 
 from copy import copy
 
 class Value:
-    def __init__(self, amount : Decimal | str, asset: Asset):
+    def __init__(self, amount : Union[Decimal,str], asset: Asset):
         if isinstance(amount, str): amount = Decimal(amount)
         self.amount : Decimal= amount
         self.asset : Asset = asset

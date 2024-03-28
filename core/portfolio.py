@@ -2,7 +2,7 @@ from typing_extensions import Self
 from datetime import datetime
 from decimal import Decimal
 from copy import deepcopy
-from typing import List, Dict
+from typing import List, Dict, Union
 
 from ..settings import SETTINGS
 from .asset import Asset
@@ -18,7 +18,7 @@ class Portfolio(Asset):
     def __str__(self) -> str:
         return f"Portfolio {self.name} ({';'.join([pos.__str__() for pos in self.get_positions()])})"
     
-    def get_position(self, asset : Asset) -> Value | None:
+    def get_position(self, asset : Asset) -> Union[Value, None]:
         try:
             return self._positions[asset]
         except KeyError as e:

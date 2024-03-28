@@ -4,7 +4,7 @@ import numpy as np
 from datetime import datetime
 from functools import partial
 from warnings import warn
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Union
 
 from .simulation import AbstractPairSimulation
 from ..enders import AbstractEnder
@@ -54,7 +54,7 @@ class HistoricalSimulation(AbstractPairSimulation, AbstractEnder):
             if col not in self.dataframe.columns:
                 raise KeyError(f"Column name {col} from other_aggregation does not exist.")
         
-        self.name_aggreation = other_aggregation | temp_base_aggregation
+        self.name_aggreation = {**other_aggregation,  **temp_base_aggregation}
         # Automatic column selection for the aggreation
         self.aggregation = {}
         func = lambda array, i, col : self.name_aggreation[col](array[:, i])
