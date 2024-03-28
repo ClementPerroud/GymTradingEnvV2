@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
-from dateutil.relativedelta import relativedelta
 from typing import List
 
 from ..simulations import AbstractPairSimulation
@@ -27,7 +26,7 @@ class SimulationTimeManager(AbstractTimeManager, ABC):
 
 
 class IntervalSimulationTimeManager(SimulationTimeManager):
-    def __init__(self, interval : timedelta | relativedelta) -> None:
+    def __init__(self, interval : timedelta) -> None:
         super().__init__()
         self.interval = interval
 

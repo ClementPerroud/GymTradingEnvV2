@@ -1,6 +1,5 @@
 import numpy as np
 from datetime import datetime, timedelta
-from dateutil.relativedelta import relativedelta
 from functools import lru_cache
 
 from .simulation import AbstractPairSimulation
@@ -21,7 +20,7 @@ class RandomPairSimulation(AbstractPairSimulation):
 
     
     @lru_cache(maxsize = 50)
-    def get_distribution_mean_std(self, interval : timedelta | relativedelta):
+    def get_distribution_mean_std(self, interval : timedelta):
         interval_mean = self.year_return * (interval / timedelta(days=365.25))
         interval_std = self.year_std * (np.sqrt(interval / timedelta(days=365.25)))
 

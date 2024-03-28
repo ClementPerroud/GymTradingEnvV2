@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Any, Self, List
+from typing import Any, List
+from typing_extensions import Self
 import gymnasium as gym
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
