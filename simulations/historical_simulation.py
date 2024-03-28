@@ -4,6 +4,7 @@ import numpy as np
 from datetime import datetime
 from functools import partial
 from warnings import warn
+from typing import Dict, Tuple
 
 from .simulation import AbstractPairSimulation
 from ..enders import AbstractEnder
@@ -20,7 +21,7 @@ class HistoricalSimulation(AbstractPairSimulation, AbstractEnder):
             low_name = "low",
             close_name = "close",
             volume_name = "volume",
-            other_aggregation : dict[str, object]= {},
+            other_aggregation : Dict[str, object]= {},
             on_missing_date = "error"
             ) -> None:
         
@@ -104,7 +105,7 @@ class HistoricalSimulation(AbstractPairSimulation, AbstractEnder):
         self.past_date = date
 
 
-    async def check(self) -> tuple[bool, bool]:
+    async def check(self) -> Tuple[bool, bool]:
         return False, (self.past_index + self.last_index_gap + 1) >= self.data_array_len
 
         

@@ -1,7 +1,7 @@
 from decimal import Decimal
 import asyncio
 from datetime import datetime
-from typing import List
+from typing import List, Dict
 
 from .action import AbstractAction
 from ..managers.analyser import PortfolioManager
@@ -10,7 +10,7 @@ from ..core import Asset, Pair, Value, PortfolioExposition
 from ..managers.exchange import ExchangeManager
 
 class DiscreteExpositionAction(AbstractAction):
-    def __init__(self, target_exposition : dict[Asset, Decimal], quote_asset : Asset):
+    def __init__(self, target_exposition : Dict[Asset, Decimal], quote_asset : Asset):
         self.quote_asset = quote_asset
         self.target_exposition = PortfolioExposition(expositions= target_exposition)
         self.portfolio_manager = PortfolioManager(quote_asset = self.quote_asset)

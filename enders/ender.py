@@ -1,17 +1,17 @@
 from abc import ABC, abstractmethod, abstractproperty
 import asyncio
-from typing import List
+from typing import List, Tuple
 
 from ..element import AbstractEnvironmentElement
 from ..utils.class_searcher import class_deep_search
 
 class AbstractEnder(AbstractEnvironmentElement, ABC):
     @abstractmethod
-    async def check(self) -> tuple[bool , bool]:
+    async def check(self) -> Tuple[bool , bool]:
         """_summary_
 
         Returns:
-            tuple[bool , bool]: Return terminated, truncated
+            Tuple[bool , bool]: Return terminated, truncated
         """
         ...
 def check_is_ender(element):

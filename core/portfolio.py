@@ -2,7 +2,7 @@ from typing import Self
 from datetime import datetime
 from decimal import Decimal
 from copy import deepcopy
-from typing import List
+from typing import List, Dict
 
 from ..settings import SETTINGS
 from .asset import Asset
@@ -12,7 +12,7 @@ from .value import Value
 class Portfolio(Asset):
     def __init__(self, positions : List[Value] = [], name : str = None) -> None:
         super().__init__(name = name)
-        self._positions : dict[Asset, Value] = {}
+        self._positions : Dict[Asset, Value] = {}
         self.add_positions(positions)
 
     def __str__(self) -> str:
@@ -64,7 +64,7 @@ class Portfolio(Asset):
     
         
 class PortfolioExposition(Portfolio):
-    def __init__(self, expositions: dict[Asset, Decimal] = []) -> None:
+    def __init__(self, expositions: Dict[Asset, Decimal] = []) -> None:
         super().__init__(positions= [Value(amount = percent, asset = asset) for asset, percent in expositions.items()])
 
         _sum_check = Decimal('0')

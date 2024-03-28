@@ -2,6 +2,7 @@ from functools import lru_cache
 from decimal import Decimal
 import asyncio
 from datetime import datetime
+from typing import Dict
 
 from ..exchanges import AbstractExchange
 from ..element import AbstractEnvironmentElement
@@ -30,7 +31,7 @@ class PortfolioManager(AbstractEnvironmentElement):
     async def reset(self, date : datetime, seed = None):
         self.exchange = self.get_trading_env().exchange
 
-    async def __valuations(self, portfolio : Portfolio, date : datetime = None) -> dict[Asset, Value]:
+    async def __valuations(self, portfolio : Portfolio, date : datetime = None) -> Dict[Asset, Value]:
         async with asyncio.TaskGroup() as tg:
             asset_valuation_task = {
                 position.asset : tg.create_task(self.position_manager.valuation(position = position, date= date))

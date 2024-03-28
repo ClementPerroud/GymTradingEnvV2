@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Tuple
 
 from ..exchanges import AbstractExchange
 from ..managers.analyser import PortfolioManager
@@ -18,7 +19,7 @@ class ValuationEnder(AbstractEnder):
         self.exchange = self.get_trading_env().exchange
 
     
-    async def check(self) -> tuple[bool, bool]:
+    async def check(self) -> Tuple[bool, bool]:
         portfolio = await self.exchange.get_portfolio()
         valuation = await self.portfolio_manager.valuation(portfolio = portfolio)
         terminated = valuation <= self.valuation_threeshold

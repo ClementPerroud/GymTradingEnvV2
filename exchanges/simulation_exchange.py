@@ -3,7 +3,7 @@ from datetime import datetime
 from copy import deepcopy
 from functools import lru_cache
 from async_lru import alru_cache
-from typing import List
+from typing import List, Dict
 
 from ..core import Pair, Quotation, Portfolio, Value
 from ..simulations.simulation import AbstractPairSimulation
@@ -18,7 +18,7 @@ class SimulationExchange(AbstractExchange):
 
     def __init__(self,
                  initial_portfolio : Portfolio, 
-                 pair_simulations : dict[Pair, AbstractPairSimulation], 
+                 pair_simulations : Dict[Pair, AbstractPairSimulation], 
                  trading_fees_pct = Decimal('0.001')# Binance fees 0.1%
         ):
         self.pair_simulations = pair_simulations
