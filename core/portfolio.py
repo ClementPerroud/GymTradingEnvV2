@@ -2,6 +2,7 @@ from typing import Self
 from datetime import datetime
 from decimal import Decimal
 from copy import deepcopy
+from typing import List
 
 from ..settings import SETTINGS
 from .asset import Asset
@@ -9,7 +10,7 @@ from .value import Value
 
 
 class Portfolio(Asset):
-    def __init__(self, positions : list[Value] = [], name : str = None) -> None:
+    def __init__(self, positions : List[Value] = [], name : str = None) -> None:
         super().__init__(name = name)
         self._positions : dict[Asset, Value] = {}
         self.add_positions(positions)
@@ -17,7 +18,7 @@ class Portfolio(Asset):
     def __str__(self) -> str:
         return f"Portfolio {self.name} ({';'.join([pos.__str__() for pos in self.get_positions()])})"
     
-    def get_position(self, asset : Asset) -> Value:
+    def get_position(self, asset : Asset) -> Value | None:
         try:
             return self._positions[asset]
         except KeyError as e:
@@ -34,11 +35,11 @@ class Portfolio(Asset):
             if self._positions[position.asset].is_null():
                 del self._positions[position.asset]
 
-    def add_positions(self, positions : list[Value]):
+    def add_positions(self, positions : List[Value]):
         for position in positions:
             self.add_position(position= position)
         
-    def get_positions(self) -> list[Value]:
+    def get_positions(self) -> List[Value]:
         return self._positions.values()
     
     def __add__(self, other):

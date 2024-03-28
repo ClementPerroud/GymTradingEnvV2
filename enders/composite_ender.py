@@ -1,9 +1,11 @@
 import asyncio
+from typing import List
+
 from .ender import AbstractEnder
 
 class CompositeEnder(AbstractEnder):
     def __init__(self) -> None:
-        self.enders : list[AbstractEnder] = []
+        self.enders : List[AbstractEnder] = []
 
     async def check(self):
         terminated, truncated = False, False

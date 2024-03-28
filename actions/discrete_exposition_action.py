@@ -1,6 +1,7 @@
 from decimal import Decimal
 import asyncio
 from datetime import datetime
+from typing import List
 
 from .action import AbstractAction
 from ..managers.analyser import PortfolioManager
@@ -49,8 +50,8 @@ class DiscreteExpositionAction(AbstractAction):
         diff_positions_percent = diff_exposition.get_positions()
 
         # Prepare
-        list_position_to_increase : list[Value] = [] # Position to gincrease
-        list_position_to_decrease : list[Value] = [] # Position to decrease
+        list_position_to_increase : List[Value] = [] # Position to gincrease
+        list_position_to_decrease : List[Value] = [] # Position to decrease
         for position in diff_positions_percent:
             if position.amount > 0: list_position_to_increase.append(position)
             else: list_position_to_decrease.append( - position) # We make them positive

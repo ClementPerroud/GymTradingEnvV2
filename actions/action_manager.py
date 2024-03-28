@@ -2,13 +2,30 @@
 from abc import abstractmethod, ABC
 from typing import TypeVar
 from gymnasium.spaces import Space
+from datetime import datetime
+
 from ..element import AbstractEnvironmentElement
+
 ActType = TypeVar("ActType")
 
 class AbstractActionManager(AbstractEnvironmentElement, ABC):
+    def __init__(self) -> None:
+        super().__init__()
+        self.action_history = {}
+
+    async def reset(self, date : datetime, seed = None):
+        self.time_manager = self.get_trading_env().time_manager
+
+    async def get_action(self, date : datetime = None):
+        if date == None : date = await self.time_manager.get_current_datetime()
+        if date not in self.action_history:
+            raise ValueError("date not found in action history.")
+        return self.action_history[date]
+
+
     @abstractmethod
     async def execute(self, action : ActType) -> None:
-        pass
+        self.action_history[await self.time_manager.get_current_datetime()] = action
 
     @abstractmethod
     def action_space(self) -> Space:

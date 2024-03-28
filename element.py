@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
+from typing import List
+
 from .utils.class_searcher import class_deep_search
 from . import environments
 
@@ -17,14 +19,14 @@ class AbstractEnvironmentElement(ABC):
         self.__trading_env = trading_env
 
 
-    def get_trading_env(self) -> "environments.AbstractTradingEnv":
+    def get_trading_env(self) -> "environments.RLTradingEnv":
         return self.__trading_env
 
     async def reset(self, date : datetime, seed = None):
         pass
 
 
-def element_deep_search(element, excluded = []) -> list[AbstractEnvironmentElement]:
+def element_deep_search(element, excluded = []) -> List[AbstractEnvironmentElement]:
     return class_deep_search(
         condition = lambda element : isinstance(element, AbstractEnvironmentElement),
         element= element,

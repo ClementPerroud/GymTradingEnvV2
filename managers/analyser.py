@@ -47,7 +47,7 @@ class PortfolioManager(AbstractEnvironmentElement):
             _sum += value
         return _sum
     
-    async def exposition(self, portfolio : Portfolio, date : datetime = None):
+    async def exposition(self, portfolio : Portfolio, date : datetime = None) -> PortfolioExposition:
         async with asyncio.TaskGroup() as tg:
             valuations_task = tg.create_task(self.__valuations(portfolio= portfolio, date=date))
             total_valation_task = tg.create_task(self.valuation(portfolio = portfolio, date=date))

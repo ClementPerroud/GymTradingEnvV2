@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod, abstractproperty
 import asyncio
+from typing import List
 
 from ..element import AbstractEnvironmentElement
 from ..utils.class_searcher import class_deep_search
@@ -16,7 +17,7 @@ class AbstractEnder(AbstractEnvironmentElement, ABC):
 def check_is_ender(element):
     return isinstance(element, AbstractEnder)
 
-def ender_deep_search(element) -> list[AbstractEnder]:
+def ender_deep_search(element) -> List[AbstractEnder]:
     return class_deep_search(
         condition = lambda element : isinstance(element, AbstractEnder),
         element= element,

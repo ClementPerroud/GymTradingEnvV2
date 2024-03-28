@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import gymnasium as gym
 from datetime import datetime
 import uuid
+from typing import List
 
 from ..time_managers import AbstractTimeManager
 from ..exchanges import AbstractExchange
@@ -15,11 +16,9 @@ class AbstractTradingEnv(gym.Env, ABC):
         self.exchange = exchange
 
         super().__init__()
-        self.id = uuid.uuid4().hex
-        self.instances[self.id] = self
 
     async def reset(self, date : datetime, seed = None):
-        self.env_elements : list[AbstractEnvironmentElement] = element_deep_search(self, excluded= [self.time_manager])
+        self.env_elements : List[AbstractEnvironmentElement] = element_deep_search(self, excluded= [self.time_manager])
         self.env_elements.insert(0, self.time_manager) # Making sur time_manager is first of the reset list
 
         # Prepare for reset

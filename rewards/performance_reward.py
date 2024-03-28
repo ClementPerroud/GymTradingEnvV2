@@ -13,7 +13,7 @@ class PerformanceReward(AbstractReward):
         self.initial_portfolio = initial_portfolio
         self.quote_asset = quote_asset
         self.portfolio_manager = PortfolioManager(quote_asset=self.quote_asset)
-
+    
     async def reset(self, date : datetime, seed = None):
         self.exchange  = self.get_trading_env().exchange
         self.time_manager = self.get_trading_env().time_manager

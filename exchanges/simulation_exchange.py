@@ -3,6 +3,7 @@ from datetime import datetime
 from copy import deepcopy
 from functools import lru_cache
 from async_lru import alru_cache
+from typing import List
 
 from ..core import Pair, Quotation, Portfolio, Value
 from ..simulations.simulation import AbstractPairSimulation
@@ -31,7 +32,7 @@ class SimulationExchange(AbstractExchange):
         for pair_simulation in self.pair_simulations.values():
             self.time_manager.add_simulation(simulation= pair_simulation)
         
-    async def get_available_pairs(self) -> list[Pair]: 
+    async def get_available_pairs(self) -> List[Pair]: 
         return list(self.pair_simulations.keys())
     
     async def get_ticker(self, pair : Pair, date : datetime = None) -> TickerResponse:

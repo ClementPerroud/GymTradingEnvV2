@@ -6,12 +6,10 @@ from gymnasium.spaces import Space
 from ..element import AbstractEnvironmentElement
 
 class AbstractObserver(AbstractEnvironmentElement, ABC):
-    @abstractmethod
-    async def get_obs_at_date(self, date : datetime) -> np.ndarray:
-        pass
+
 
     @abstractmethod
-    async def get_obs(self) -> np.ndarray:
+    async def get_obs(self, date : datetime = None) -> np.ndarray:
         pass
 
     @abstractmethod

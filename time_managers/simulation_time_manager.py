@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
+from typing import List
 
 from ..simulations import AbstractPairSimulation
 from .time_manager import AbstractTimeManager
@@ -15,7 +16,7 @@ class SimulationTimeManager(AbstractTimeManager, ABC):
 
     @abstractmethod
     async def reset(self, date : datetime, seed = None)->None:
-        self.__simulations : list[AbstractPairSimulation] = []
+        self.__simulations : List[AbstractPairSimulation] = []
     
     @abstractmethod
     async def forward(self, date : datetime):

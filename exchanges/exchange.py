@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod, abstractproperty
 from decimal import Decimal
 from datetime import datetime
+from typing import List
 
 from ..core import Pair, Quotation, Portfolio
 from ..element import AbstractEnvironmentElement
@@ -9,7 +10,7 @@ from .exceptions import PairNotFound
 
 class AbstractExchange(AbstractEnvironmentElement, ABC):        
     @abstractmethod
-    async def get_available_pairs(self) -> list[Pair]:
+    async def get_available_pairs(self) -> List[Pair]:
         ...
     
     @abstractmethod

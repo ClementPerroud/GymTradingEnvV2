@@ -2,6 +2,7 @@ from decimal import Decimal
 from datetime import datetime
 from copy import deepcopy
 from functools import lru_cache
+from typing import List
 
 from ..core import Pair, Quotation, Portfolio, Value
 from ..simulations.simulation import AbstractPairSimulation
@@ -13,7 +14,7 @@ from .exchange import AbstractExchange
 
 class BinanceProductionExchange(AbstractExchange):
     
-    async def get_available_pairs(self) -> list[Pair]:
+    async def get_available_pairs(self) -> List[Pair]:
         ...
     
     async def get_ticker(self, pair : Pair, date : datetime = None) -> TickerResponse:

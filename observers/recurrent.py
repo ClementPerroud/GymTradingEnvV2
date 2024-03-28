@@ -16,7 +16,7 @@ class RecurrentObserver(AbstractObserver):
         
     async def reset(self, date : datetime, seed = None) -> None:
         self.time_manager = self.get_trading_env().time_manager
-        self.memory = [None for _ in range(self.window)]
+        self.memory = {}
     
     @property
     def simulation_warmup_steps(self):
@@ -31,32 +31,32 @@ class RecurrentObserver(AbstractObserver):
             return Box(shape = shape, low= -np.inf, high = np.inf)
         return NotImplemented
 
-    async def get_obs(self) -> list:
-        # Update
-        new_obs = await self.sub_observer.get_obs()
-        self.memory.append(new_obs)
-        self.memory.pop(0)
+    async def get_obs(self, date : datetime = None) -> list:
+        if date is None: date = await self.time_manager.get_current_datetime()
 
-        # Check for missing values
-        self.memory = await self.__fill_missing_historical_values(obs_list= self.memory)
-        return np.array(self.memory, dtype= float)
-        
-    async def get_obs_at_date(self, date : datetime) -> list:
-        obs_list = [None for _ in range(self.window)]
-        return self.__fill_missing_historical_values(obs_list= obs_list, relative_date= date)
-
-    async def __fill_missing_historical_values(self, obs_list :list, relative_date : datetime = None) -> list:
-        # Check for missing values
-
-        index_tasks = []
+        tasks = []
+        new_memory = {}
+        steps_back = list(range(self.window))[::-1] 
+        obs_dates = []
         async with asyncio.TaskGroup() as tg:
-            for index, item in enumerate(obs_list): # Reverse the list to make step_back and index match
-                if item is None:
-                    obs_date = await self.time_manager.get_historical_datetime(step_back=self.window - 1 - index, relative_date= relative_date)
-                    obs_list[index] = tg.create_task(self.sub_observer.get_obs_at_date(date= obs_date))
-                    index_tasks.append(index)
+            for index in steps_back:
+                obs_date = await self.time_manager.get_historical_datetime(step_back=index, relative_date= date)
+                obs_dates.append(obs_date)
+                if obs_date not in self.memory:
+                    new_memory[obs_date] = tg.create_task(self.sub_observer.get_obs(date= obs_date))
+                
+        
+        for obs_date in new_memory.keys():
+            new_memory[obs_date] = new_memory[obs_date].result()
+        self.memory.update(new_memory)
+        
+        results = [self.memory[obs_date] for obs_date in obs_dates]
+        
+        # Clean-up memory:
+        if len(self.memory) >= self.window * 4:
+            # Getting from size : self.window * 4 to self.windows * 3 by removing oldest elements
+            for i in range(len(self.memory)):
+                del self.memory[(next(iter(self.memory)))] # As dict are ordered by ascending order of the create datetime. This remove this oldest element
 
-        for index in index_tasks:
-            obs_list[index] = obs_list[index].result()
-        return obs_list
+        return results # Reverse order in order to have the list ordered in ascending order on dates
 

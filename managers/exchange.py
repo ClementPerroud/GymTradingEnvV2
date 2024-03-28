@@ -1,6 +1,7 @@
 import asyncio
 from functools import lru_cache
 from datetime import datetime
+from typing import List
 
 from ..element import AbstractEnvironmentElement
 from ..exchanges import AbstractExchange
@@ -27,7 +28,7 @@ class ExchangeManager(AbstractEnvironmentElement):
             self.graph[pair.quote_asset].add(pair.asset)  # Assuming you can trade in both directions
         
     
-    def get_asset_path(self, from_asset, to_asset) -> list[Asset]:
+    def get_asset_path(self, from_asset, to_asset) -> List[Asset]:
         """
         Find a path from the pair's asset to its quote asset using BFS
         """
@@ -52,7 +53,7 @@ class ExchangeManager(AbstractEnvironmentElement):
         raise PathNotFound(from_asset, to_asset)
 
         
-    async def market_order(self, quantity : Value, pair :Pair) -> list[OrderResponse]:
+    async def market_order(self, quantity : Value, pair :Pair) -> List[OrderResponse]:
         if quantity.asset not in [pair.asset, pair.quote_asset]:
             raise ValueError("quantity.quote_asset must match either pair.asset or pair.quote_asset")
 

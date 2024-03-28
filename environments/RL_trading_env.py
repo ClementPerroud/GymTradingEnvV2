@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Self
+from typing import Any, Self, List
 import gymnasium as gym
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
@@ -20,7 +20,7 @@ class RLTradingEnv(AbstractTradingEnv, CompositeEnder):
             action_manager : AbstractActionManager,
             observer : AbstractObserver,
             reward : AbstractReward,
-            enders : list[AbstractEnder] = []
+            enders : List[AbstractEnder] = []
         ) -> None:
         
         super().__init__(time_manager= time_manager, exchange= exchange)
@@ -39,7 +39,6 @@ class RLTradingEnv(AbstractTradingEnv, CompositeEnder):
     async def reset(self, date : datetime, seed = None):
         self.__step = 0
         await super().reset(date= date, seed = seed)
-        
         return (await self.observer.get_obs()), {}
 
     async def step(self, action : Any):
