@@ -3,9 +3,9 @@ from datetime import datetime
 
 from ..element import AbstractEnvironmentElement
 class AbstractReward(AbstractEnvironmentElement, ABC):
-    @property
-    def multiply_by(self):
-        return 1
+    def __init__(self, multiply_by = 1) -> None:
+        self.multiply_by = multiply_by
+        super().__init__()
     
     @abstractmethod
     async def reset(self, date : datetime, seed = None) -> None:

@@ -15,8 +15,8 @@ class Portfolio(Asset):
         self._positions : Dict[Asset, Value] = {}
         self.add_positions(positions)
 
-    def __str__(self) -> str:
-        return f"Portfolio {self.name} ({';'.join([pos.__str__() for pos in self.get_positions()])})"
+    def __repr__(self) -> str:
+        return f"Portfolio {self.name} ({';'.join([pos.__repr__() for pos in self.get_positions()])})"
     
     def get_position(self, asset : Asset) -> Union[Value, None]:
         try:

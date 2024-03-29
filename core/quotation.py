@@ -26,8 +26,8 @@ class Quotation:
         quotation.pair = quotation.pair.reverse()
         return quotation
     
-    def __str__(self):
-        return f"{self.amount : 0.2f} {self.pair.__str__(separator='/')}"
+    def __repr__(self):
+        return f"{self.amount : 0.2f} {self.pair.__repr__(separator='/')}"
 
     # Numeric operators
     def __mul__(self, other):

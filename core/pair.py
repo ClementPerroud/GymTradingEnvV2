@@ -21,6 +21,6 @@ class Pair:
     def __hash__(self) -> int:
         return hash((self.asset, self.quote_asset))
     
-    def __str__(self, separator = ""):
+    def __repr__(self, separator = ""):
         return f"{self.asset}{separator}{self.quote_asset}"
     

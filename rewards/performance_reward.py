@@ -9,7 +9,8 @@ from ..managers.analyser import PortfolioManager
 from ..time_managers import AbstractTimeManager
 
 class PerformanceReward(AbstractReward):
-    def __init__(self, initial_portfolio :Portfolio, quote_asset = Asset) -> None:
+    def __init__(self, initial_portfolio :Portfolio, quote_asset : Asset, multiply_by = 800) -> None:
+        super().__init__(multiply_by= multiply_by)
         self.initial_portfolio = initial_portfolio
         self.quote_asset = quote_asset
         self.portfolio_manager = PortfolioManager(quote_asset=self.quote_asset)

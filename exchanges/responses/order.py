@@ -12,5 +12,5 @@ class OrderResponse(AbstractResponse):
     price : Quotation
     fees : Value
 
-    def __str__(self):
-        return f"OrderResponse({'; '.join([f'{key}={value.__str__()}' for key, value in self.__dict__.items()])})"
+    def __repr__(self):
+        return f"OrderResponse({'; '.join([f'{key}={value.__repr__()}' for key, value in self.__dict__.items()])})"

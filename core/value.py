@@ -18,7 +18,7 @@ class Value:
     def is_null(self) -> bool:
         return (abs(self.amount) < SETTINGS["tolerance"])
     
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         return f"{self.amount} {self.asset}"
     
     def __add__(self, other):
