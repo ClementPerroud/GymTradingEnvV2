@@ -50,12 +50,13 @@ class ArrayConcatenateObserver(AbstractObserver):
                     raise TypeError(f"Space {sub_space.__class__.__name__} not handled. Please consider using Box spaces.")
     
     async def get_obs(self, date : datetime = None):
-        results = []
-        async with asyncio.TaskGroup() as tg:
-            for sub_observer in self.sub_observers:
-                results.append(tg.create_task(sub_observer.get_obs(date = date)))
+        tasks = []
+        
+        for sub_observer in self.sub_observers:
+            tasks.append(sub_observer.get_obs(date = date))
+        results = await asyncio.gather(*tasks)
         
         for i in range(len(results)):
-            results[i] = np.array(results[i].result())
+            results[i] = np.array(results[i])
         return np.concatenate(results, axis = self.axis).tolist()
     

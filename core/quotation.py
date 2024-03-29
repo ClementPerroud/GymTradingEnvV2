@@ -1,6 +1,6 @@
 from decimal import Decimal
 from numbers import Number
-from typing import Self
+from typing_extensions import Self
 from copy import copy
 
 from .value import Value

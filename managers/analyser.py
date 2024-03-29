@@ -2,7 +2,7 @@ from functools import lru_cache
 from decimal import Decimal
 import asyncio
 from datetime import datetime
-from typing import Dict
+from typing import Dict, List
 
 from ..exchanges import AbstractExchange
 from ..element import AbstractEnvironmentElement
@@ -32,32 +32,29 @@ class PortfolioManager(AbstractEnvironmentElement):
         self.exchange = self.get_trading_env().exchange
 
     async def __valuations(self, portfolio : Portfolio, date : datetime = None) -> Dict[Asset, Value]:
-        async with asyncio.TaskGroup() as tg:
-            asset_valuation_task = {
-                position.asset : tg.create_task(self.position_manager.valuation(position = position, date= date))
-                    for position in portfolio.get_positions()
-            }
-        return {
-            asset : valuation_task.result()
-                for asset, valuation_task in asset_valuation_task.items()
-        }
+        assets, valuation_tasks = [], []
+        for position in portfolio.get_positions():
+            assets.append(position.asset)
+            valuation_tasks.append(self.position_manager.valuation(position = position, date= date))
+        valuations = await asyncio.gather(*valuation_tasks)
+        return dict(zip(assets, valuations))
     
-    async def valuation(self, portfolio : Portfolio, date : datetime = None) -> Value:
+    async def valuation(self, portfolio : Portfolio, date : datetime = None, valuations : Dict[Asset, Value] = None) -> Value:
+        if valuations is None: valuations = await self.__valuations(portfolio = portfolio, date= date)
         _sum = Value(Decimal('0'), self.position_manager.quote_asset)
-        for value in (await self.__valuations(portfolio = portfolio, date= date)).values():
+        for value in valuations.values():
             _sum += value
         return _sum
     
     async def exposition(self, portfolio : Portfolio, date : datetime = None) -> PortfolioExposition:
-        async with asyncio.TaskGroup() as tg:
-            valuations_task = tg.create_task(self.__valuations(portfolio= portfolio, date=date))
-            total_valation_task = tg.create_task(self.valuation(portfolio = portfolio, date=date))
-            
-        total_valation = total_valation_task.result()
+
+        valuations = await self.__valuations(portfolio= portfolio, date=date)
+        total_valuation = await self.valuation(portfolio = portfolio, date=date, valuations= valuations)
+
         return PortfolioExposition(
             expositions = {
-                asset : valuation / total_valation
-                for asset, valuation in valuations_task.result().items() 
+                asset : valuation / total_valuation
+                for asset, valuation in valuations.items() 
             }
         )
 

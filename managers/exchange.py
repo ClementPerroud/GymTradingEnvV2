@@ -78,18 +78,18 @@ class ExchangeManager(AbstractEnvironmentElement):
         graph_path = self.get_asset_path(from_asset= from_asset, to_asset= to_asset)
 
         quotation_tasks = []
-        async with asyncio.TaskGroup() as tg:
-            for i in range(0, len(graph_path)-1):
-                intermediate_pair = Pair(graph_path[i], graph_path[i+1])
-                quotation_tasks.append(
-                    tg.create_task(self.exchange.get_quotation(pair = intermediate_pair))
-                )
+        for i in range(0, len(graph_path)-1):
+            intermediate_pair = Pair(graph_path[i], graph_path[i+1])
+            quotation_tasks.append(
+                self.exchange.get_quotation(pair = intermediate_pair)
+            )
+        quotations = await asyncio.gather(*quotation_tasks)
 
-        quotation = 1
-        for quotation_task in quotation_tasks:
-            quotation = quotation * quotation_task.result()
+        cumulative_quotation = 1
+        for quotation in quotations:
+            cumulative_quotation = cumulative_quotation * quotation
             
-        return quotation
+        return cumulative_quotation
         
 
 

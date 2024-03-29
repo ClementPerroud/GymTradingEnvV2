@@ -34,17 +34,15 @@ class DiscreteExpositionAction(AbstractAction):
 
     async def execute(self):
         current_position = await self.exchange.get_portfolio()
-        async with asyncio.TaskGroup() as tg:
-            total_valuation_task = tg.create_task(self.portfolio_manager.valuation(
+        total_valuation, current_exposition = await asyncio.gather(
+            self.portfolio_manager.valuation(
                 portfolio= current_position
-            ))
-            current_exposition_task = tg.create_task(self.portfolio_manager.exposition(
+            ),
+            self.portfolio_manager.exposition(
                 portfolio= current_position
-            ))
-        total_valuation : Value = total_valuation_task.result()
+            )
+        )
         quote_asset = total_valuation.asset
-
-        current_exposition = current_exposition_task.result()
 
         diff_exposition = self.target_exposition - current_exposition
         diff_positions_percent = diff_exposition.get_positions()
@@ -57,31 +55,29 @@ class DiscreteExpositionAction(AbstractAction):
             else: list_position_to_decrease.append( - position) # We make them positive
 
         # Compute how to re equilibrate porfolio
-        async with asyncio.TaskGroup() as tg:
-            order_tasks = []
-            while len(list_position_to_decrease)>0 and len(list_position_to_increase)>0:
-                position_to_decrease : Value = list_position_to_decrease[0]
-                position_to_increase : Value = list_position_to_increase[0]
+        order_tasks = []
+        while len(list_position_to_decrease)>0 and len(list_position_to_increase)>0:
+            position_to_decrease : Value = list_position_to_decrease[0]
+            position_to_increase : Value = list_position_to_increase[0]
 
-                if position_to_increase.amount < position_to_decrease.amount:
-                    ratio_quantity = position_to_increase.amount
-                    list_position_to_decrease[0].amount -= ratio_quantity
-                    list_position_to_increase.pop(0)
-                else:
-                    ratio_quantity = position_to_decrease.amount
-                    list_position_to_decrease.pop(0)
-                    list_position_to_increase[0].amount -= ratio_quantity
-                # ratio_quantity is expressed in % of total valuation
+            if position_to_increase.amount < position_to_decrease.amount:
+                ratio_quantity = position_to_increase.amount
+                list_position_to_decrease[0].amount -= ratio_quantity
+                list_position_to_increase.pop(0)
+            else:
+                ratio_quantity = position_to_decrease.amount
+                list_position_to_decrease.pop(0)
+                list_position_to_increase[0].amount -= ratio_quantity
+            # ratio_quantity is expressed in % of total valuation
 
-                order_tasks.append(
-                    tg.create_task(
-                        self.execute_order(
-                            quantity_quote_asset = total_valuation * ratio_quantity,
-                            asset_to_decrease = position_to_decrease.asset,
-                            asset_to_increase = position_to_increase.asset   
-                        )
-                    )
+            order_tasks.append(
+                self.execute_order(
+                    quantity_quote_asset = total_valuation * ratio_quantity,
+                    asset_to_decrease = position_to_decrease.asset,
+                    asset_to_increase = position_to_increase.asset   
                 )
+            )
+        return await asyncio.gather(*order_tasks)
 
                 
                 

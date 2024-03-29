@@ -31,32 +31,36 @@ class RecurrentObserver(AbstractObserver):
             return Box(shape = shape, low= -np.inf, high = np.inf)
         return NotImplemented
 
-    async def get_obs(self, date : datetime = None) -> list:
-        if date is None: date = await self.time_manager.get_current_datetime()
-
-        tasks = []
-        new_memory = {}
-        steps_back = list(range(self.window))[::-1] 
-        obs_dates = []
-        async with asyncio.TaskGroup() as tg:
-            for index in steps_back:
-                obs_date = await self.time_manager.get_historical_datetime(step_back=index, relative_date= date)
-                obs_dates.append(obs_date)
-                if obs_date not in self.memory:
-                    new_memory[obs_date] = tg.create_task(self.sub_observer.get_obs(date= obs_date))
-                
-        
-        for obs_date in new_memory.keys():
-            new_memory[obs_date] = new_memory[obs_date].result()
-        self.memory.update(new_memory)
-        
-        results = [self.memory[obs_date] for obs_date in obs_dates]
-        
-        # Clean-up memory:
+    def __clean_memory(self):
         if len(self.memory) >= self.window * 4:
             # Getting from size : self.window * 4 to self.windows * 3 by removing oldest elements
             for i in range(len(self.memory)):
                 del self.memory[(next(iter(self.memory)))] # As dict are ordered by ascending order of the create datetime. This remove this oldest element
 
+    async def get_obs(self, date : datetime = None) -> list:
+        if date is None: date = await self.time_manager.get_current_datetime()
+
+        new_memory = {}
+
+        steps_back = list(range(self.window))[::-1] 
+        window_date_tasks = []
+        for index in steps_back:
+            window_date_tasks.append(
+                self.time_manager.get_historical_datetime(step_back=index, relative_date= date)
+            )
+        window_dates = await asyncio.gather(*window_date_tasks)
+
+        update_memory_at_dates, new_obs_tasks = [], []
+        for window_date in window_dates:
+            if window_date not in self.memory:
+                update_memory_at_dates.append(window_date)
+                new_obs_tasks.append(self.sub_observer.get_obs(date= window_date))
+        new_obs = await asyncio.gather(*new_obs_tasks)
+        new_memory = dict(zip(update_memory_at_dates, new_obs))
+        self.memory.update(new_memory)
+        
+        results = [self.memory[window_date] for window_date in window_dates]
+        
+        self.__clean_memory()
         return results # Reverse order in order to have the list ordered in ascending order on dates
 

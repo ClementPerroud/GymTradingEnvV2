@@ -1,8 +1,6 @@
 from decimal import Decimal
 from datetime import datetime
 from copy import deepcopy
-from functools import lru_cache
-from async_lru import alru_cache
 from typing import List, Dict
 
 from ..core import Pair, Quotation, Portfolio, Value

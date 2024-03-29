@@ -11,12 +11,12 @@ class CompositeEnder(AbstractEnder):
         terminated, truncated = False, False
         ender_tasks = []
 
-        async with asyncio.TaskGroup() as tg:
-            for ender in self.enders:
-                if id(ender) is not id(self): # To avoid infinite loop
-                    ender_tasks.append(tg.create_task(ender.check()))
+        for ender in self.enders:
+            if id(ender) is not id(self): # To avoid recursive call which would lead to an infinite loop
+                ender_tasks.append(ender.check())
+        ender_results = await asyncio.gather(*ender_tasks)
 
-        for ender_task in ender_tasks:
-            ender_terminated, ender_truncated = ender_task.result()
+        for ender_result in ender_results:
+            ender_terminated, ender_truncated = ender_result
             terminated, truncated = (terminated or ender_terminated), (truncated or ender_truncated)
         return terminated, truncated

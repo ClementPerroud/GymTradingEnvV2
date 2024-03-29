@@ -26,13 +26,15 @@ class PerformanceReward(AbstractReward):
 
     async def compute_reward(self):
         # Compute requirements
-        async with asyncio.TaskGroup() as tg:
-            current_portfolio = tg.create_task(self.exchange.get_portfolio())
-            current_datetime = tg.create_task(self.time_manager.get_current_datetime())
+        
+        current_portfolio, current_datetime = await asyncio.gather(
+            self.exchange.get_portfolio(),
+            self.time_manager.get_current_datetime() 
+        )
 
         current_valuation = await self.__compute_valuation(
-            portfolio= current_portfolio.result(),
-            date= current_datetime.result()
+            portfolio= current_portfolio,
+            date= current_datetime
         )
 
         # Compute rewards
