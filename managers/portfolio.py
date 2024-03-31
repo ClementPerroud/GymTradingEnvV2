@@ -7,18 +7,17 @@ from typing import Dict, List
 from ..exchanges import AbstractExchange
 from ..element import AbstractEnvironmentElement
 from ..core import Portfolio, PortfolioExposition, Pair, Asset, Value
-from .exchange import ExchangeManager
 
 class PositionManager(AbstractEnvironmentElement):
     def __init__(self,  quote_asset : Asset) -> None:
         self.quote_asset = quote_asset
 
     async def reset(self, date : datetime, seed = None):
-        self.exchange = self.get_trading_env().exchange
+        self.exchange_manager = self.get_trading_env().exchange_manager
 
     async def valuation(self, position : Value, date : datetime = None) -> Value:
         if position.asset == self.quote_asset: return position
-        return position * await self.exchange.get_quotation(
+        return position * await self.exchange_manager.get_quotation(
             pair = Pair(asset= position.asset, quote_asset= self.quote_asset),
             date= date
         )
@@ -29,7 +28,7 @@ class PortfolioManager(AbstractEnvironmentElement):
         self.position_manager = PositionManager(quote_asset= self.quote_asset)
 
     async def reset(self, date : datetime, seed = None):
-        self.exchange = self.get_trading_env().exchange
+        self.exchange_manager = self.get_trading_env().exchange_manager
 
     async def __valuations(self, portfolio : Portfolio, date : datetime = None) -> Dict[Asset, Value]:
         assets, valuation_tasks = [], []

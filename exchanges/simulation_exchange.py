@@ -1,9 +1,9 @@
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, timedelta
 from copy import deepcopy
 from typing import List, Dict
 
-from ..core import Pair, Quotation, Portfolio, Value
+from ..core import Asset, Pair, Quotation, Portfolio, Value
 from ..simulations.simulation import AbstractPairSimulation
 from ..time_managers import AbstractTimeManager
 
@@ -17,19 +17,34 @@ class SimulationExchange(AbstractExchange):
     def __init__(self,
                  initial_portfolio : Portfolio, 
                  pair_simulations : Dict[Pair, AbstractPairSimulation], 
-                 trading_fees_pct = Decimal('0.001')# Binance fees 0.1%
+                 trading_fees_pct = Decimal('0.001'),# Binance fees 0.1%
+                 asset_yearly_borrowing_interest : Dict[Asset, Decimal] = {}
         ):
         self.pair_simulations = pair_simulations
         self.initial_portfolio = initial_portfolio
+        self.asset_yearly_borrowing_interest = asset_yearly_borrowing_interest
         self.trading_fees_ratio = Decimal('1') - trading_fees_pct
 
     async def reset(self, date : datetime, seed = None):
         self.portfolio = deepcopy(self.initial_portfolio)
         self.time_manager : AbstractTimeManager = self.get_trading_env().time_manager
         await self.time_manager.reset(date=date, seed= seed)
-        for pair_simulation in self.pair_simulations.values():
-            self.time_manager.add_simulation(simulation= pair_simulation)
-        
+
+    async def forward(self, date: datetime, seed=None):
+        await super().forward(date, seed)
+        elapsed_time = (await self.time_manager.get_historical_datetime(step_back=1) - date)
+        ratio = Decimal.from_float(elapsed_time / timedelta(days = 365.25))
+        portfolio = await self.get_portfolio()
+
+        for asset, yearly_borrowing_fee in self.asset_yearly_borrowing_interest.items():
+            position = portfolio.get_position(asset= asset)
+            if position is not None and position.amount <  Decimal('0'):
+                self.portfolio.add_position(
+                    Value(
+                        amount = - abs(position.amount) * yearly_borrowing_fee * ratio,
+                        asset=asset
+                    )
+                )
     async def get_available_pairs(self) -> List[Pair]: 
         return list(self.pair_simulations.keys())
     

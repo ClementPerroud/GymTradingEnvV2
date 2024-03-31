@@ -62,5 +62,5 @@ class RecurrentObserver(AbstractObserver):
         results = [self.memory[window_date] for window_date in window_dates]
         
         self.__clean_memory()
-        return results # Reverse order in order to have the list ordered in ascending order on dates
+        return np.array(results) # Reverse order in order to have the list ordered in ascending order on dates
 

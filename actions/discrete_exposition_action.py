@@ -4,36 +4,34 @@ from datetime import datetime
 from typing import List, Dict
 
 from .action import AbstractAction
-from ..managers.analyser import PortfolioManager
+from ..managers.portfolio import PortfolioManager
 from ..exchanges import AbstractExchange
 from ..core import Asset, Pair, Value, PortfolioExposition
-from ..managers.exchange import ExchangeManager
 
 class DiscreteExpositionAction(AbstractAction):
     def __init__(self, target_exposition : Dict[Asset, Decimal], quote_asset : Asset):
         self.quote_asset = quote_asset
         self.target_exposition = PortfolioExposition(expositions= target_exposition)
         self.portfolio_manager = PortfolioManager(quote_asset = self.quote_asset)
-        self.order_manager = ExchangeManager()
         
     async def reset(self, date : datetime, seed = None):
-        self.exchange = self.get_trading_env().exchange
+        self.exchange_manager = self.get_trading_env().exchange_manager
 
     async def execute_order(self, asset_to_decrease : Asset, asset_to_increase : Asset, quantity_quote_asset : Value):
         quote_asset = quantity_quote_asset.asset
         if asset_to_decrease == quote_asset:
                 quantity_asset = - quantity_quote_asset
         else:
-            quantity_asset = - quantity_quote_asset * (await self.exchange.get_quotation(pair = Pair(asset_to_decrease, quote_asset= quote_asset))).reverse()
+            quantity_asset = - quantity_quote_asset * (await self.exchange_manager.get_quotation(pair = Pair(asset_to_decrease, quote_asset= quote_asset))).reverse()
 
         pair = Pair(asset= asset_to_increase, quote_asset= asset_to_decrease)
-        await self.order_manager.market_order(
+        await self.exchange_manager.market_order(
             quantity= quantity_asset,
             pair = pair
         )
 
     async def execute(self):
-        current_position = await self.exchange.get_portfolio()
+        current_position = await self.exchange_manager.get_portfolio()
         total_valuation, current_exposition = await asyncio.gather(
             self.portfolio_manager.valuation(
                 portfolio= current_position

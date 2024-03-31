@@ -17,7 +17,7 @@ class ExpositionObserver(AbstractObserver):
 
     async def reset(self, date : datetime, seed = None) -> None:
         self.time_manager = self.get_trading_env().time_manager
-        self.exchange = self.get_trading_env().exchange
+        self.exchange_manager = self.get_trading_env().exchange_manager
     
     @property
     def simulation_warmup_steps(self):
@@ -27,7 +27,7 @@ class ExpositionObserver(AbstractObserver):
         return Box(shape = (len(self.pairs),), high = np.inf, low = - np.inf)
     
     async def get_obs(self, date : datetime = None):
-        portfolio = await self.exchange.get_portfolio()
+        portfolio = await self.exchange_manager.get_portfolio()
         exposition = await self.portfolio_manager.exposition(portfolio= portfolio, date= date)
         results = [exposition.get_position(asset = pair.asset) for pair in self.pairs]
         for index, value in enumerate(results):

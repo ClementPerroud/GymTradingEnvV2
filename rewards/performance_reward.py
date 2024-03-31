@@ -5,7 +5,7 @@ import asyncio
 from ..core import Asset, Portfolio
 from .reward import AbstractReward
 from ..exchanges import AbstractExchange
-from ..managers.analyser import PortfolioManager
+from ..managers.portfolio import PortfolioManager
 from ..time_managers import AbstractTimeManager
 
 class PerformanceReward(AbstractReward):
@@ -16,7 +16,7 @@ class PerformanceReward(AbstractReward):
         self.portfolio_manager = PortfolioManager(quote_asset=self.quote_asset)
     
     async def reset(self, date : datetime, seed = None):
-        self.exchange  = self.get_trading_env().exchange
+        self.exchange_manager  = self.get_trading_env().exchange_manager
         self.time_manager = self.get_trading_env().time_manager
         self.last_valuation = await self.__compute_valuation(portfolio= self.initial_portfolio, date= date)
 
@@ -29,7 +29,7 @@ class PerformanceReward(AbstractReward):
         # Compute requirements
         
         current_portfolio, current_datetime = await asyncio.gather(
-            self.exchange.get_portfolio(),
+            self.exchange_manager.get_portfolio(),
             self.time_manager.get_current_datetime() 
         )
 

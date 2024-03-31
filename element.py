@@ -22,9 +22,18 @@ class AbstractEnvironmentElement(ABC):
     def get_trading_env(self) -> "environments.RLTradingEnv":
         return self.__trading_env
 
+
+    async def __reset__(self, date : datetime, seed = None):
+        return await self.reset(date= date, seed= seed)
+    
     async def reset(self, date : datetime, seed = None):
         pass
 
+    async def __forward__(self, date : datetime, seed = None):
+        return await self.forward(date= date, seed= seed)
+    
+    async def forward(self, date : datetime, seed = None):
+        pass
 
 def element_deep_search(element, excluded = []) -> List[AbstractEnvironmentElement]:
     return class_deep_search(

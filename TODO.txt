@@ -1,0 +1,4 @@
+- Adding borrowing fees
+- Add Volume feature to observer
+- Find a way to process the features
+- Add learnable to enders to check if we want to learn from a certain part of not

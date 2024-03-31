@@ -30,5 +30,3 @@ class AbstractExchange(AbstractEnvironmentElement, ABC):
     @abstractmethod
     async def market_order(self, quantity : Decimal, pair : Pair) -> OrderResponse:
         ...
-
-

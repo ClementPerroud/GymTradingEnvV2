@@ -23,14 +23,12 @@ class RandomPairSimulation(AbstractPairSimulation):
     def get_distribution_mean_std(self, interval : timedelta):
         interval_mean = self.year_return * (interval / timedelta(days=365.25))
         interval_std = self.year_std * (np.sqrt(interval / timedelta(days=365.25)))
-
         return interval_mean, interval_std
 
     
     async def reset(self, date : datetime, seed = None) -> None:
         self._date = date
         self.last_close = self.initial_price_amount
-        await super().reset(date= date, seed = seed)
 
 
 
@@ -50,8 +48,6 @@ class RandomPairSimulation(AbstractPairSimulation):
 
 
     async def forward(self, date : datetime) -> None:
-        await super().forward(date= date)
-
         interval : timedelta = date - self._date
         if abs(interval.total_seconds()) < 1E-5: return
 

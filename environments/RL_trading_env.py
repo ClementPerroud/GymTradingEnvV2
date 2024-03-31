@@ -13,25 +13,22 @@ from ..actions  import AbstractActionManager
 from ..observers  import AbstractObserver
 from ..enders import AbstractEnder, CompositeEnder, ender_deep_search
 
-class RLTradingEnv(AbstractTradingEnv, CompositeEnder):
+class RLTradingEnv(AbstractTradingEnv):
     instances = {}
     def __init__(self,
             time_manager : AbstractTimeManager,
-            exchange : AbstractExchange,
+            exchange_manager : AbstractExchange,
             action_manager : AbstractActionManager,
             observer : AbstractObserver,
             reward : AbstractReward,
             enders : List[AbstractEnder] = []
         ) -> None:
         
-        super().__init__(time_manager= time_manager, exchange= exchange)
+        super().__init__(time_manager= time_manager, exchange_manager= exchange_manager, enders= enders)
 
         self.action_manager = action_manager
         self.observer = observer
         self.reward = reward
-
-        # Implement enders for CompositeEnder class
-        self.enders = ender_deep_search(self) + enders
 
         self.action_space = self.action_manager.action_space()
         self.observation_space = self.observer.observation_space()
@@ -39,7 +36,7 @@ class RLTradingEnv(AbstractTradingEnv, CompositeEnder):
 
     async def reset(self, date : datetime, seed = None):
         self.__step = 0
-        await super().reset(date= date, seed = seed)
+        await super().__reset__(date= date, seed = seed)
         return (await self.observer.get_obs()), {}
 
     async def step(self, action : Any):
@@ -47,7 +44,7 @@ class RLTradingEnv(AbstractTradingEnv, CompositeEnder):
         await self.action_manager.execute(action = action)
 
         # Going from t to t+1
-        await self.time_manager.step()
+        await super().__step__()
         self.__step += 1
 
         # At t+1 : Perform checks, get observations, get rewards

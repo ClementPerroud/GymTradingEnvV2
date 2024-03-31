@@ -12,10 +12,6 @@ class AbstractTimeManager(AbstractEnvironmentElement, ABC):
         ...
 
     @abstractmethod
-    async def reset(self, date : datetime, seed = None) -> None:
-        ...
-
-    @abstractmethod
     async def step(self):
         ...
 
