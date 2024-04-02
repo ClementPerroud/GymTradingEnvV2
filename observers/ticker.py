@@ -14,13 +14,13 @@ from ..core import Pair
 from .observer import AbstractObserver
 
 class TickerObserver(AbstractObserver):
-    def __init__(self, pair : Pair, mean_steps = 200) -> None:
+    def __init__(self, pair : Pair, mean_steps = 48) -> None:
         super().__init__()
 
         self.pair = pair
         self.mean_steps = mean_steps
         self.memory_size = self.simulation_warmup_steps + 10
-
+        self.__scale = np.array([0.005, 0.005, 0.005, 0.005, 0.75])
     async def reset(self, date : datetime, seed = None) -> None:
         self.__lru_get_obs.cache_clear()
         
@@ -52,15 +52,17 @@ class TickerObserver(AbstractObserver):
         )
         ticker = tickers[0]
         previous_ticker = tickers[1]
-        high_feature = ticker.high / ticker.open - 1
-        low_feature = ticker.low / ticker.open - 1
-        close_feature = ticker.close / previous_ticker.close - 1
 
-        volume_feature = (ticker.volume * Decimal(self.mean_steps)) / sum([t.volume for t in tickers[1:]], start = ticker.volume)
-        result =  [
+        close_feature = float(ticker.close / previous_ticker.close) - 1
+        open_feature = float(ticker.open / ticker.close) - 1
+        high_feature = float(ticker.high / ticker.close) - 1
+        low_feature = float(ticker.low / ticker.close) - 1
+        volume_feature = float(ticker.volume.amount)  / (1E-3 + np.median([float(t.volume.amount) for t in tickers]))
+        result =  np.array([
+            float(close_feature),
+            float(open_feature),
             float(high_feature), 
             float(low_feature), 
-            float(close_feature),
             float(volume_feature)
-        ]
-        return np.array(result)
+        ])
+        return result / self.__scale

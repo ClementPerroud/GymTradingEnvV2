@@ -52,9 +52,9 @@ class RLTradingEnv(AbstractTradingEnv):
         reward = await self.reward.get()
 
         ## Perform ender checks with CompositeEnder
-        terminated, truncated = await self.check()
+        terminated, truncated, trainable = await self.check()
         
-        return obs, reward, terminated, truncated, {}
+        return obs, reward, terminated, truncated, trainable, {}
 
     
 

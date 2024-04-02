@@ -42,7 +42,7 @@ class AbstractTradingEnv(gym.Env, CompositeEnder, ABC):
         # Go though the step needed for the environment to work
         for _ in range(warm_steps_needed + 1):
             await self.__step__()
-            terminated, truncated = await self.check()
+            terminated, truncated, trainable = await self.check()
             if terminated or truncated: raise ValueError("Your environment has been terminated or truncated during initialization.")
 
 

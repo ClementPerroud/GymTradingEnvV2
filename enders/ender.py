@@ -7,7 +7,7 @@ from ..utils.class_searcher import class_deep_search
 
 class AbstractEnder(AbstractEnvironmentElement, ABC):
     @abstractmethod
-    async def check(self) -> Tuple[bool , bool]:
+    async def check(self) -> Tuple[bool , bool, bool]:
         """_summary_
 
         Returns:

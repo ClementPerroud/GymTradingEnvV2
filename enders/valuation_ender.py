@@ -25,4 +25,4 @@ class ValuationEnder(AbstractEnder):
         terminated = valuation <= self.valuation_threeshold
 
         truncated = False
-        return terminated, truncated
+        return terminated, truncated, True

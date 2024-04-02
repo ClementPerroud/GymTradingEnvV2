@@ -8,7 +8,7 @@ class CompositeEnder(AbstractEnder):
         self.enders : List[AbstractEnder] = []
 
     async def check(self):
-        terminated, truncated = False, False
+        terminated, truncated, trainable = False, False, True
         ender_tasks = []
 
         for ender in self.enders:
@@ -17,6 +17,6 @@ class CompositeEnder(AbstractEnder):
         ender_results = await asyncio.gather(*ender_tasks)
 
         for ender_result in ender_results:
-            ender_terminated, ender_truncated = ender_result
-            terminated, truncated = (terminated or ender_terminated), (truncated or ender_truncated)
-        return terminated, truncated
+            ender_terminated, ender_truncated, ender_trainable = ender_result
+            terminated, truncated, trainable = (terminated or ender_terminated), (truncated or ender_truncated), (trainable and ender_trainable)
+        return terminated, truncated, trainable

@@ -36,6 +36,7 @@ class HistoricalSimulation(AbstractPairSimulation, AbstractEnder):
         )
         self.dataframe.set_index("date_close", inplace= True)
         self.dataframe.sort_index(inplace= True)
+        self.main_interval = self.dataframe.index.diff().value_counts().index[0]
         self.dates = self.dataframe.index.to_numpy()
         self.data_array = self.dataframe.to_numpy()
         self.data_array_len = len(self.data_array)
@@ -82,9 +83,12 @@ class HistoricalSimulation(AbstractPairSimulation, AbstractEnder):
         np_date = np.datetime64(date)
         await super().forward(date= date)
 
-        index = np.searchsorted(self.dates, np_date, side="left")
+        index = np.searchsorted(self.dates, np_date, side="right")-1
+
+        self.trainable = True
         if np_date != self.dates[index]: 
             message = f'No row found for date : {date}.'
+            self.trainable = False
             if self.on_missing_date == "warn" : warn(message= message)
             elif self.on_missing_date == "error" : ValueError(message)
         
@@ -94,7 +98,8 @@ class HistoricalSimulation(AbstractPairSimulation, AbstractEnder):
             raise ValueError(f"""
                 Could not find any data to aggregate between {self.past_date} and {date}.
                 Please increase you interval or increase the granularity of the dataframe. """)
-    
+        elif (date - self.past_date)/self.main_interval * 0.8 > index_gap:
+            self.trainable = False 
         data = self.__aggregrate(array=array)
 
 
@@ -106,6 +111,10 @@ class HistoricalSimulation(AbstractPairSimulation, AbstractEnder):
 
 
     async def check(self) -> Tuple[bool, bool]:
-        return False, (self.past_index + self.last_index_gap + 1) >= self.data_array_len
+        return (
+            False, 
+            (self.past_index + self.last_index_gap + 1) >= self.data_array_len, 
+            self.trainable
+        )
 
         
