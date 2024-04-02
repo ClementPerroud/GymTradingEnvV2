@@ -34,9 +34,9 @@ class HistoricalSimulation(AbstractPairSimulation, AbstractEnder):
             )),
             inplace= True
         )
+        self.main_interval = self.dataframe["date_close"].diff().value_counts().index[0]
         self.dataframe.set_index("date_close", inplace= True)
         self.dataframe.sort_index(inplace= True)
-        self.main_interval = self.dataframe.index.diff().value_counts().index[0]
         self.dates = self.dataframe.index.to_numpy()
         self.data_array = self.dataframe.to_numpy()
         self.data_array_len = len(self.data_array)
@@ -92,15 +92,21 @@ class HistoricalSimulation(AbstractPairSimulation, AbstractEnder):
             if self.on_missing_date == "warn" : warn(message= message)
             elif self.on_missing_date == "error" : ValueError(message)
         
-        array = self.data_array[self.past_index + 1:index + 1]
         index_gap = index - self.past_index
-        if index_gap <= 0: 
-            raise ValueError(f"""
-                Could not find any data to aggregate between {self.past_date} and {date}.
-                Please increase you interval or increase the granularity of the dataframe. """)
-        elif (date - self.past_date)/self.main_interval * 0.8 > index_gap:
-            self.trainable = False 
+        if index_gap > 0:
+            array = self.data_array[self.past_index + 1:index + 1]
+        else:
+            array = self.data_array[index: index+1]
+        # if index_gap <= 0: 
+        #     raise ValueError(f"""
+        #         Could not find any data to aggregate between {self.past_date} and {date}.
+        #         Please increase you interval or increase the granularity of the dataframe. """)
+
+
         data = self.__aggregrate(array=array)
+        if (date - self.past_date)/self.main_interval * 0.8 > index_gap:
+            self.trainable = False 
+
 
 
         self.update_memory(date=date, data=data)

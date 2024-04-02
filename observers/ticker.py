@@ -33,7 +33,7 @@ class TickerObserver(AbstractObserver):
         return self.mean_steps + 1
 
     def observation_space(self) -> Space:
-        return Box(shape = (3,), high = np.inf, low = - np.inf)
+        return Box(shape = (5,), high = np.inf, low = - np.inf)
 
     async def get_obs(self, date : datetime = None):
         if date is None: date = await self.time_manager.get_current_datetime()
