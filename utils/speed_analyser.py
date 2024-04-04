@@ -35,7 +35,8 @@ class SpeedAnalyser:
             )
             if "node" in self.duration_steps[self.current_step_name]:
                 self.duration_steps[self.current_step_name]["node"].end_step()
-        
+        self.current_step_name = None
+
     def __recursive_print(self, level =0):
         elapsed_time = sum(
             [value["duration"] for value in self.duration_steps.values()]
@@ -52,10 +53,6 @@ class SpeedAnalyser:
 
     def end(self):
         self.end_step()
-
- 
-
-
 
         # Print
         elapsed_time = sum(

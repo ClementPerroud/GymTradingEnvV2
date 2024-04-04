@@ -61,6 +61,7 @@ class Portfolio(Asset):
             new_portfolio = deepcopy(self).__add__(other = other.__neg__())
             new_portfolio.name = f"{self.name} - {other.name}"
             return new_portfolio
+
     
         
 class PortfolioExposition(Portfolio):
