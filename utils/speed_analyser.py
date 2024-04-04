@@ -1,5 +1,5 @@
 import time
-from typing import Self
+from typing_extensions import Self
 
 class SpeedAnalyser:
     def __init__(self) -> None:
