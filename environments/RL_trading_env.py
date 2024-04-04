@@ -4,6 +4,7 @@ from typing_extensions import Self
 import gymnasium as gym
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
+import asyncio
 
 from .abstract_trading_env import AbstractTradingEnv
 from ..time_managers import AbstractTimeManager
@@ -12,6 +13,7 @@ from ..rewards import AbstractReward
 from ..actions  import AbstractActionManager
 from ..observers  import AbstractObserver
 from ..enders import AbstractEnder, CompositeEnder, ender_deep_search
+from ..renderers import AbstractRenderer
 
 class RLTradingEnv(AbstractTradingEnv):
     instances = {}
@@ -21,7 +23,8 @@ class RLTradingEnv(AbstractTradingEnv):
             action_manager : AbstractActionManager,
             observer : AbstractObserver,
             reward : AbstractReward,
-            enders : List[AbstractEnder] = []
+            enders : List[AbstractEnder] = [],
+            renderers : List[AbstractRenderer] = [],
         ) -> None:
         
         super().__init__(time_manager= time_manager, exchange_manager= exchange_manager, enders= enders)
@@ -29,6 +32,7 @@ class RLTradingEnv(AbstractTradingEnv):
         self.action_manager = action_manager
         self.observer = observer
         self.reward = reward
+        self.renderers = renderers
 
         self.action_space = self.action_manager.action_space()
         self.observation_space = self.observer.observation_space()
@@ -37,7 +41,8 @@ class RLTradingEnv(AbstractTradingEnv):
     async def reset(self, date : datetime, seed = None):
         self.__step = 0
         await super().__reset__(date= date, seed = seed)
-        return (await self.observer.get_obs()), {}
+        obs = await self.observer.get_obs()
+        return obs, {}
 
     async def step(self, action : Any):
         # At t : execute action
@@ -53,7 +58,16 @@ class RLTradingEnv(AbstractTradingEnv):
 
         ## Perform ender checks with CompositeEnder
         terminated, truncated, trainable = await self.check()
-        
+
+        ## Trigger recoders
+        render_steps, render_episode = [], []
+        for renderer in self.renderers: 
+            render_steps.append(renderer.render_step(action, obs, reward, terminated, truncated, trainable, {}))
+            if terminated or truncated:
+                render_episode.append(renderer.render_episode())
+        await asyncio.gather(*render_steps)
+        await asyncio.gather(*render_episode)
+
         return obs, reward, terminated, truncated, trainable, {}
 
     

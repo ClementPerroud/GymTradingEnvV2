@@ -7,8 +7,8 @@ from . import environments
 
 class AbstractEnvironmentElement(ABC):
     def __init__(self) -> None:
-        self.__reseted = False
         super().__init__()
+        self.__trading_env = None
     
     @property
     def simulation_warmup_steps(self) -> int:
@@ -20,6 +20,14 @@ class AbstractEnvironmentElement(ABC):
 
 
     def get_trading_env(self) -> "environments.RLTradingEnv":
+        if self.__trading_env is None:
+            ValueError("""
+            Please provide the related trading_env during 
+            initialization using the method .set_trading_env()
+            This is usually not necessary when the instance is directly
+            or indirectly linked to the trading environment, as 
+            it is automatically set up.
+            """)
         return self.__trading_env
 
 

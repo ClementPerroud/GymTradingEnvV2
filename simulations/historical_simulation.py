@@ -13,9 +13,8 @@ from ..enders import AbstractEnder
 
 class HistoricalSimulation(AbstractPairSimulation, AbstractEnder):
     def __init__(self,
-            dataframe : pd.DataFrame,
-            date_close = "date_close",
-            date_open = "date_open",
+            date_close_name = "date_close",
+            date_open_name = "date_open",
             open_name = "open",
             high_name = "high",
             low_name = "low",
@@ -26,20 +25,13 @@ class HistoricalSimulation(AbstractPairSimulation, AbstractEnder):
             ) -> None:
         
         super().__init__()
-        self.dataframe = dataframe.reset_index(drop=False)
-        self.dataframe.rename(
-            columns = dict(zip(
-                [date_open, date_close, open_name, high_name, low_name, close_name, volume_name],
-                ["date_open", "date_close", "open", "high", "low", "close", "volume"]
-            )),
-            inplace= True
-        )
-        self.main_interval = self.dataframe["date_close"].diff().value_counts().index[0]
-        self.dataframe.set_index("date_close", inplace= True)
-        self.dataframe.sort_index(inplace= True)
-        self.dates = self.dataframe.index.to_numpy()
-        self.data_array = self.dataframe.to_numpy()
-        self.data_array_len = len(self.data_array)
+
+        (self.date_close_name, self.date_open_name, self.open_name, 
+         self.high_name, self.low_name, self.close_name, self.volume_name) = (
+            date_close_name, date_open_name, open_name, 
+            high_name, low_name, close_name, volume_name 
+         )
+        self.other_aggregation = other_aggregation
 
         # Preparing aggreation
         # Named based aggregation
@@ -50,22 +42,47 @@ class HistoricalSimulation(AbstractPairSimulation, AbstractEnder):
             "close" : lambda x: x[-1],
             "volume": lambda x: x.sum()
         }
+        self.name_aggreation = {**other_aggregation,  **temp_base_aggregation}
+
+        if on_missing_date not in ["error", "warn", None]:
+            raise ValueError("on_missing_date must be in ['error', 'warn', None].")
+        self.on_missing_date = on_missing_date
+
+
+    def set_df(self, 
+            dataframe : pd.DataFrame,
+        ):
+        self.dataframe = dataframe.reset_index(drop=False)
+        self.dataframe.rename(
+            columns = {
+                self.date_open_name : "date_open",
+                self.date_close_name : "date_close",
+                self.open_name : "open",
+                self.high_name : "high",
+                self.low_name : "low",
+                self.close_name : "close",
+                self.volume_name : "volume"
+            },
+            inplace= True
+        )
+        self.main_interval = self.dataframe["date_close"].diff().value_counts().index[0]
+        self.dataframe.set_index("date_close", inplace= True)
+        self.dataframe.sort_index(inplace= True)
+        self.dates = self.dataframe.index.to_numpy()
+        self.data_array = self.dataframe.to_numpy()
+        self.data_array_len = len(self.data_array)
+
         # Check if columns from other_aggregation exist
-        for col in other_aggregation.keys():
+        for col in self.other_aggregation.keys():
             if col not in self.dataframe.columns:
                 raise KeyError(f"Column name {col} from other_aggregation does not exist.")
         
-        self.name_aggreation = {**other_aggregation,  **temp_base_aggregation}
         # Automatic column selection for the aggreation
         self.aggregation = {}
         func = lambda array, i, col : self.name_aggreation[col](array[:, i])
         for i, col in enumerate(self.dataframe.columns):
             if col in self.name_aggreation:
                 self.aggregation[col] = partial(func, i = i, col = col)
-
-        if on_missing_date not in ["error", "warn", None]:
-            raise ValueError("on_missing_date must be in ['error', 'warn', None].")
-        self.on_missing_date = on_missing_date
 
     async def reset(self, date : datetime, seed = None) -> None:
         np_date = np.datetime64(date)

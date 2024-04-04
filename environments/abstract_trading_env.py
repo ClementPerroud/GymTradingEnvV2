@@ -17,7 +17,7 @@ class AbstractTradingEnv(gym.Env, CompositeEnder, ABC):
         self.exchange_manager = exchange_manager
 
         self.initial_enders = enders
-
+        self.is_new = True
         super().__init__()
 
     @abstractmethod
@@ -25,10 +25,12 @@ class AbstractTradingEnv(gym.Env, CompositeEnder, ABC):
         ...
 
     async def __reset__(self, date : datetime, seed = None):
-        self.enders = ender_deep_search(self) + self.initial_enders
 
-        self.env_elements : List[AbstractEnvironmentElement] = element_deep_search(self, excluded= [self.time_manager])
-        self.env_elements.insert(0, self.time_manager) # Making sur time_manager is first of the reset list
+        if self.is_new:
+            self.enders = ender_deep_search(self) + self.initial_enders
+            self.env_elements : List[AbstractEnvironmentElement] = element_deep_search(self, excluded= [self.time_manager])
+            self.env_elements.insert(0, self.time_manager) # Making sur time_manager is first of the reset list
+
 
         # Prepare for reset
         warm_steps_needed = 0
@@ -39,6 +41,7 @@ class AbstractTradingEnv(gym.Env, CompositeEnder, ABC):
         # Reset all environment elements.
         for element in self.env_elements:
             await element.__reset__(date= date, seed = seed)
+        
         # Go though the step needed for the environment to work
         for _ in range(warm_steps_needed + 1):
             await self.__step__()

@@ -77,6 +77,9 @@ class Value:
     def __le__(self, other):
         return self.__eq__(other) or self.__lt__(other)
     
+    def __hash__(self) -> int:
+        return hash((self.amount, self.asset))
+    
 def _asset_check(asset1 : Asset, asset2 : Asset):
     if asset1 != asset2:
         raise QuoteMismatchError(asset1 = asset1, asset2 = asset2)
