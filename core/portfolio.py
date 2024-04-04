@@ -47,7 +47,6 @@ class Portfolio(Asset):
             return Portfolio(
                 positions= list(self.get_positions()) + list(other.get_positions()),
             )
-        
         return NotImplemented
     
     def __neg__(self):
@@ -62,6 +61,11 @@ class Portfolio(Asset):
             new_portfolio.name = f"{self.name} - {other.name}"
             return new_portfolio
 
+    def to_record(self):
+        return {
+            asset.__repr__() : float(value.amount)
+                for asset, value in self._positions.items()
+        }
     
         
 class PortfolioExposition(Portfolio):

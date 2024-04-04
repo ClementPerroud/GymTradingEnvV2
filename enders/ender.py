@@ -11,7 +11,7 @@ class AbstractEnder(AbstractEnvironmentElement, ABC):
         """_summary_
 
         Returns:
-            Tuple[bool , bool]: Return terminated, truncated
+            Tuple[bool , bool]: Return terminated, truncated, trainable
         """
         ...
 
