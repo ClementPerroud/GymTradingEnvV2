@@ -12,10 +12,10 @@ from ..enders import AbstractEnder
 from ..settings import SETTINGS
 
 class ComputedDifferentialSharpeRatioReward(AbstractReward, AbstractEnder):
-    def __init__(self, eta, initial_portfolio :Portfolio, quote_asset : Asset, multiply_by = 800) -> None:
+    def __init__(self, eta : Decimal, initial_portfolio :Portfolio, quote_asset : Asset, multiply_by = 800) -> None:
         super().__init__(multiply_by= multiply_by)
         self.eta = eta
-        self.stabilization_steps = int(1 / self.eta) + 10
+        self.stabilization_steps = int(1 / (self.eta**0.6)) + 10
         self.initial_portfolio = initial_portfolio
         self.quote_asset = quote_asset
         self.portfolio_manager = PortfolioManager(quote_asset=self.quote_asset)
@@ -86,21 +86,25 @@ class ComputedDifferentialSharpeRatioReward(AbstractReward, AbstractEnder):
     
 
 class MoodyDifferentialSharpeRatioReward(AbstractReward, AbstractEnder):
-    def __init__(self, eta, initial_portfolio :Portfolio, quote_asset : Asset, multiply_by = 800) -> None:
+    def __init__(self, eta : Decimal, initial_portfolio :Portfolio, quote_asset : Asset, multiply_by = 800) -> None:
         super().__init__(multiply_by= multiply_by)
         self.eta = eta
-        self.stabilization_steps = int(1 / self.eta) + 10
+        self.stabilization_steps = int(1 / (self.eta ** Decimal('0.6'))) + 10
         self.initial_portfolio = initial_portfolio
         self.quote_asset = quote_asset
         self.portfolio_manager = PortfolioManager(quote_asset=self.quote_asset)
 
+    def get_eta(self) -> Decimal:
+        if self.steps >= self.stabilization_steps : return self.eta
+        ratio = Decimal.from_float(self.steps / self.stabilization_steps)
+        return Decimal("0.1") * (1 - ratio) + self.eta * ratio
     
     async def reset(self, date : datetime, seed = None):
         self.exchange_manager  = self.get_trading_env().exchange_manager
         self.time_manager = self.get_trading_env().time_manager
         self.last_valuation = await self.__compute_valuation(portfolio= self.initial_portfolio, date= date)
-        self.A_last = 0
-        self.B_last = 0
+        self.A_last = Decimal("0")
+        self.B_last = Decimal("0")
         self.steps = 0
           
     async def check(self):
@@ -123,34 +127,37 @@ class MoodyDifferentialSharpeRatioReward(AbstractReward, AbstractEnder):
             date= current_datetime
         )
 
-        profit = current_valuation.amount - self.last_valuation.amount
+        return_t = current_valuation.amount / self.last_valuation.amount - Decimal("1")
 
         # Avoid forward fill data to poluate our exponential moving average A and B.
-        if abs(profit) < SETTINGS["tolerance"]:
+        if abs(return_t) < SETTINGS["tolerance"]:
             return 0
         
         # In the paper, Rt is the projet and not the return !
-        profit = float(profit)
+        # return_t = (1 + return_t).ln()
+        return_t = (current_valuation.amount / self.last_valuation.amount).ln()* 100_000
 
-        delta_A_current = profit - self.A_last
-        delta_B_current = profit ** 2 - self.B_last
+        delta_A_current = return_t - self.A_last
+        delta_B_current = return_t ** 2 - self.B_last
 
-        A_current = self.A_last + self.eta * delta_A_current
-        B_current = self.B_last + self.eta * delta_B_current
+        current_eta = self.get_eta()
+        A_current = self.A_last + current_eta * delta_A_current
+        B_current = self.B_last + current_eta * delta_B_current
 
-        try:
-            # Main Formula
-            reward = (
-                (self.B_last * delta_A_current - self.A_last * delta_B_current / 2) 
-                / (self.B_last - self.A_last**2)**(3/2)
-            )
-            # Second Formula proposed later in other paper
-            # reward = (
-            #     ( (self.B_last - self.A_last**2) * delta_A_current - 0.5 * self.A_last * (delta_A_current)**2) 
-            #     / (self.B_last - self.A_last**2)**(3/2)
-            # )
-        except ZeroDivisionError as e:
+
+        # Main Formula
+        numerator = (self.B_last * delta_A_current - self.A_last * delta_B_current / 2)
+        denominator = (self.B_last - self.A_last**2)**Decimal('1.5')
+        if denominator > 0:
+            reward = numerator / denominator
+        else:
             reward = 0
+        # Second Formula proposed later in other paper
+        # reward = (
+        #     ( (self.B_last - self.A_last**2) * delta_A_current - 0.5 * self.A_last * (delta_A_current)**2) 
+        #     / (self.B_last - self.A_last**2)**(3/2)
+        # )
+
 
         # Update for next reward
         self.last_portfolio = current_portfolio
@@ -159,7 +166,7 @@ class MoodyDifferentialSharpeRatioReward(AbstractReward, AbstractEnder):
         self.B_last = B_current
         
         self.steps += 1
-        return reward
+        return float(reward)
 
     async def __compute_valuation(self, portfolio : Portfolio, date : datetime = None):
         return await self.portfolio_manager.valuation(
