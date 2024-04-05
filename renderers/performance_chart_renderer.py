@@ -44,11 +44,13 @@ class PerformanceChartRenderer(AbstractRenderer):
 
     async def render_episode(self):
         # Extracting data from memory deque
-        dates, valuations = [], []
+        dates, valuations, rewards = [], [], []
         pair_prices = {pair : [] for pair in self.pairs}
-        for elem in self.memory:
+        for index, elem in enumerate(self.memory):
+            # if index < 1500 or index > 1700: continue
             dates.append(elem["date"])
             valuations.append(elem["portfolio_valuation"])
+            rewards.append(elem["reward"] if elem["trainable"] else 0)
             for pair in self.pairs:
                 pair_prices[pair].append(elem[f"price_{pair}"])
         valuations = np.array(valuations)
@@ -75,19 +77,32 @@ class PerformanceChartRenderer(AbstractRenderer):
 
         # Display of graphs
         fig, ax = plt.subplots(1, 1, figsize = (6, 1.5), dpi =300)
+        
+        # Plot Portfolio Valuation
         ax.tick_params(axis='both', labelsize=5)
         ax.plot(
             dates,valuations,
             color = "navy", linewidth = 0.7, label = "Portfolio Valuation"
         )
 
+        # Plot Reward
+        ax_reward = ax.twinx()
+        ax_reward.tick_params(axis='both', labelsize=5)
+
+        ax_reward.plot(
+            dates, rewards,
+            color = "red", linewidth = 0.5, label = "Reward", alpha = 0.6
+        )
+        
+        ax_reward.plot([dates[0], dates[-1]], [0,0], '--', color = "black", linewidth = 0.5, alpha = 0.6)
+        ax_reward.set_ylim(top = min(rewards) + 2*(max(rewards) - min(rewards)))
         for pair in self.pairs:
             ax.plot(
                 dates,
                 np.array(pair_prices[pair])*valuations[0]/pair_prices[pair][0],
                 linewidth = 0.7, label = f"Price of {pair}"
             )
-        ax.set_yscale("log")
+        # ax.set_yscale("log")
         ax.grid(color='lightgray', linestyle='--', linewidth=0.5)
 
         print(

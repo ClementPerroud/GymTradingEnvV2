@@ -1,4 +1,4 @@
-from math import log
+from math import log, exp
 from datetime import datetime
 import asyncio
 from decimal import Decimal
@@ -15,7 +15,7 @@ class ComputedDifferentialSharpeRatioReward(AbstractReward, AbstractEnder):
     def __init__(self, eta, initial_portfolio :Portfolio, quote_asset : Asset, multiply_by = 800) -> None:
         super().__init__(multiply_by= multiply_by)
         self.eta = eta
-        self.stabilization_steps = int(1 / self.eta) + 1
+        self.stabilization_steps = int(1 / self.eta) + 10
         self.initial_portfolio = initial_portfolio
         self.quote_asset = quote_asset
         self.portfolio_manager = PortfolioManager(quote_asset=self.quote_asset)
@@ -60,13 +60,17 @@ class ComputedDifferentialSharpeRatioReward(AbstractReward, AbstractEnder):
             return 0
         
         # Compute exponential moving MEAN and VAR or the log_return
-        log_mean = log(1 + R_current)
-        return_mean_t = self.return_mean_tm1 * (1 - self.eta) + self.eta * log_mean
+        value = log(1 + float(R_current))
+        return_mean_t = self.return_mean_tm1 * (1 - self.eta) + self.eta * value
         # Formula for exp moving std found :  
         # Paper "Incremental calculation of weighted mean and variance" written by Tony Finch, Feb 2009
-        return_var_t = (1 - self.eta)*(self.return_var_tm1 + self.eta*(log_mean - self.return_mean_tm1)**2)
+        return_var_t = (1 - self.eta)*(self.return_var_tm1 + self.eta*(value - self.return_mean_tm1)**2)
 
-        sharpe_t = return_mean_t / (return_var_t**0.5)
+        if return_mean_t > 0:
+            sharpe_t = return_mean_t / (return_var_t**0.5)
+        else:
+            sharpe_t = return_mean_t * (return_var_t**0.5)
+            
         reward = sharpe_t - self.sharpe_tm1
 
         self.return_mean_tm1 = return_mean_t
@@ -85,7 +89,7 @@ class MoodyDifferentialSharpeRatioReward(AbstractReward, AbstractEnder):
     def __init__(self, eta, initial_portfolio :Portfolio, quote_asset : Asset, multiply_by = 800) -> None:
         super().__init__(multiply_by= multiply_by)
         self.eta = eta
-        self.stabilization_steps = int(1 / self.eta) + 1
+        self.stabilization_steps = int(1 / self.eta) + 10
         self.initial_portfolio = initial_portfolio
         self.quote_asset = quote_asset
         self.portfolio_manager = PortfolioManager(quote_asset=self.quote_asset)
@@ -119,27 +123,28 @@ class MoodyDifferentialSharpeRatioReward(AbstractReward, AbstractEnder):
             date= current_datetime
         )
 
-        R_current = current_valuation.amount / self.last_valuation.amount - Decimal("1")
+        profit = current_valuation.amount - self.last_valuation.amount
 
         # Avoid forward fill data to poluate our exponential moving average A and B.
-        if abs(R_current) < SETTINGS["tolerance"]:
+        if abs(profit) < SETTINGS["tolerance"]:
             return 0
         
-        R_current = float(R_current)
+        # In the paper, Rt is the projet and not the return !
+        profit = float(profit)
 
-        delta_A_current = R_current - self.A_last
-        delta_B_current = R_current ** 2 - self.B_last
+        delta_A_current = profit - self.A_last
+        delta_B_current = profit ** 2 - self.B_last
 
         A_current = self.A_last + self.eta * delta_A_current
         B_current = self.B_last + self.eta * delta_B_current
 
         try:
             # Main Formula
-            reward2 = (
+            reward = (
                 (self.B_last * delta_A_current - self.A_last * delta_B_current / 2) 
                 / (self.B_last - self.A_last**2)**(3/2)
             )
-            # Second Formula proposed later
+            # Second Formula proposed later in other paper
             # reward = (
             #     ( (self.B_last - self.A_last**2) * delta_A_current - 0.5 * self.A_last * (delta_A_current)**2) 
             #     / (self.B_last - self.A_last**2)**(3/2)
