@@ -1,3 +1,3 @@
 from .reward import AbstractReward
 from .performance_reward import PerformanceReward
-from .differential_sharpe_ratio_reward import DifferentialSharpeRatioReward
+from .differential_sharpe_ratio_reward import MoodyDifferentialSharpeRatioReward, ComputedDifferentialSharpeRatioReward

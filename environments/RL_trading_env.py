@@ -55,21 +55,26 @@ class RLTradingEnv(AbstractTradingEnv):
         # At t+1 : Perform checks, get observations, get rewards
         obs = await self.observer.get_obs()
         reward = await self.reward.get()
+        infos = {"date": await self.time_manager.get_current_datetime()}
 
         ## Perform ender checks with CompositeEnder
         terminated, truncated, trainable = await self.check()
 
-        ## Trigger recoders
+        ## Trigger renderers
+        await self.__renderers(action, obs, reward, terminated, truncated, trainable, infos)
+
+        return obs, reward, terminated, truncated, trainable, infos
+
+    async def __renderers(self, action, obs, reward, terminated, truncated, trainable, infos):
         render_steps, render_episode = [], []
         for renderer in self.renderers: 
-            render_steps.append(renderer.render_step(action, obs, reward, terminated, truncated, trainable, {}))
+            render_steps.append(renderer.render_step(action, obs, reward, terminated, truncated, trainable, infos))
             if terminated or truncated:
                 render_episode.append(renderer.render_episode())
+        # First : steps
         await asyncio.gather(*render_steps)
+        # Secondly : episode 
         await asyncio.gather(*render_episode)
-
-        return obs, reward, terminated, truncated, trainable, {}
-
     
 
     

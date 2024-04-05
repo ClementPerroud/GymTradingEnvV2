@@ -76,6 +76,6 @@ class PortfolioExposition(Portfolio):
         for amount in expositions.values():
             _sum_check += amount
         if abs(_sum_check - Decimal('1')) > SETTINGS["tolerance"]:
-            raise ValueError("Expositions must add up to 1")
+            raise ValueError("Expositions must add up to 1. This is not the case : ", self)
     
     

@@ -70,7 +70,7 @@ class PerformanceChartRenderer(AbstractRenderer):
         
         # Sharpe Ratio
         all_returns = np.diff(valuations) / valuations[:-1]
-        sharpe_ratio = np.mean(all_returns) / np.std(all_returns) 
+        sharpe_ratio = np.mean(all_returns) / (np.std(all_returns) + 1E-6)
         sharpe_ratio *= (timedelta(days = 365.25) / mean_interval)**(0.5)
 
         # Display of graphs

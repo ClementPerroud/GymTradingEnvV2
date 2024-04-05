@@ -1,6 +1,7 @@
 from math import log
 from datetime import datetime
 import asyncio
+from decimal import Decimal
 
 from ..core import Asset, Portfolio
 from .reward import AbstractReward
@@ -8,8 +9,79 @@ from ..exchanges import AbstractExchange
 from ..managers.portfolio import PortfolioManager
 from ..time_managers import AbstractTimeManager
 from ..enders import AbstractEnder
+from ..settings import SETTINGS
 
-class DifferentialSharpeRatioReward(AbstractReward, AbstractEnder):
+class ComputedDifferentialSharpeRatioReward(AbstractReward, AbstractEnder):
+    def __init__(self, eta, initial_portfolio :Portfolio, quote_asset : Asset, multiply_by = 800) -> None:
+        super().__init__(multiply_by= multiply_by)
+        self.eta = eta
+        self.stabilization_steps = int(1 / self.eta) + 1
+        self.initial_portfolio = initial_portfolio
+        self.quote_asset = quote_asset
+        self.portfolio_manager = PortfolioManager(quote_asset=self.quote_asset)
+
+    
+    async def reset(self, date : datetime, seed = None):
+        self.exchange_manager  = self.get_trading_env().exchange_manager
+        self.time_manager = self.get_trading_env().time_manager
+        self.last_valuation = await self.__compute_valuation(portfolio= self.initial_portfolio, date= date)
+        # self.A_last = 0
+        # self.B_last = 0
+        self.steps = 0
+        self.return_mean_tm1 = 0
+        self.return_var_tm1 = 0
+        self.sharpe_tm1 = 0
+          
+    async def check(self):
+        """The reward need to stabilize before beeing relevant."""
+        # Return terminated, truncated, trainable
+        if self.steps < self.stabilization_steps:
+            return False, False, False
+        return False, False, True
+
+
+    # Called after forward
+    async def compute_reward(self):
+        # Compute requirements
+        current_portfolio, current_datetime = await asyncio.gather(
+            self.exchange_manager.get_portfolio(),
+            self.time_manager.get_current_datetime() 
+        )
+
+        current_valuation = await self.__compute_valuation(
+            portfolio= current_portfolio,
+            date= current_datetime
+        )
+
+        R_current = current_valuation.amount / self.last_valuation.amount - Decimal("1")
+
+        # Avoid forward fill data to poluate our exponential moving average A and B.
+        if abs(R_current) < SETTINGS["tolerance"]:
+            return 0
+        
+        # Compute exponential moving MEAN and VAR or the log_return
+        log_mean = log(1 + R_current)
+        return_mean_t = self.return_mean_tm1 * (1 - self.eta) + self.eta * log_mean
+        # Formula for exp moving std found :  
+        # Paper "Incremental calculation of weighted mean and variance" written by Tony Finch, Feb 2009
+        return_var_t = (1 - self.eta)*(self.return_var_tm1 + self.eta*(log_mean - self.return_mean_tm1)**2)
+
+        sharpe_t = return_mean_t / (return_var_t**0.5)
+        reward = sharpe_t - self.sharpe_tm1
+
+        self.return_mean_tm1 = return_mean_t
+        self.return_var_tm1 = return_var_t
+        self.sharpe_tm1 = sharpe_t
+        self.steps += 1
+        return reward
+
+    async def __compute_valuation(self, portfolio : Portfolio, date : datetime = None):
+        return await self.portfolio_manager.valuation(
+            portfolio= portfolio, date= date
+        )  
+    
+
+class MoodyDifferentialSharpeRatioReward(AbstractReward, AbstractEnder):
     def __init__(self, eta, initial_portfolio :Portfolio, quote_asset : Asset, multiply_by = 800) -> None:
         super().__init__(multiply_by= multiply_by)
         self.eta = eta
@@ -47,21 +119,36 @@ class DifferentialSharpeRatioReward(AbstractReward, AbstractEnder):
             date= current_datetime
         )
 
-        R_current = float(current_valuation / self.last_valuation) - 1
+        R_current = current_valuation.amount / self.last_valuation.amount - Decimal("1")
 
-        A_current = self.eta * R_current + (1 - self.eta) * self.A_last
-        B_current = self.eta * (R_current**2) + (1 - self.eta) * self.B_last
+        # Avoid forward fill data to poluate our exponential moving average A and B.
+        if abs(R_current) < SETTINGS["tolerance"]:
+            return 0
+        
+        R_current = float(R_current)
+
         delta_A_current = R_current - self.A_last
         delta_B_current = R_current ** 2 - self.B_last
+
+        A_current = self.A_last + self.eta * delta_A_current
+        B_current = self.B_last + self.eta * delta_B_current
+
         try:
-            reward = (
+            # Main Formula
+            reward2 = (
                 (self.B_last * delta_A_current - self.A_last * delta_B_current / 2) 
                 / (self.B_last - self.A_last**2)**(3/2)
             )
+            # Second Formula proposed later
+            # reward = (
+            #     ( (self.B_last - self.A_last**2) * delta_A_current - 0.5 * self.A_last * (delta_A_current)**2) 
+            #     / (self.B_last - self.A_last**2)**(3/2)
+            # )
         except ZeroDivisionError as e:
             reward = 0
 
         # Update for next reward
+        self.last_portfolio = current_portfolio
         self.last_valuation = current_valuation
         self.A_last = A_current
         self.B_last = B_current
