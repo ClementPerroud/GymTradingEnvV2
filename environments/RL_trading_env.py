@@ -38,9 +38,9 @@ class RLTradingEnv(AbstractTradingEnv):
         self.observation_space = self.observer.observation_space()
     
 
-    async def reset(self, date : datetime, seed = None):
+    async def reset(self, date : datetime, seed = None, **kwargs):
         self.__step = 0
-        await super().__reset__(date= date, seed = seed)
+        await super().__reset__(date= date, seed = seed, **kwargs)
         obs = await self.observer.get_obs()
         return obs, {}
 
