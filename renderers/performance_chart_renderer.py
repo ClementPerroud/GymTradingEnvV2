@@ -90,17 +90,6 @@ class PerformanceChartRenderer(AbstractRenderer):
             color = "navy", linewidth = 0.7, label = "Portfolio Valuation"
         )
 
-        # Plot Reward
-        ax_reward = ax.twinx()
-        ax_reward.tick_params(axis='both', labelsize=5)
-
-        ax_reward.plot(
-            dates, rewards,
-            color = "red", linewidth = 0.5, label = "Reward", alpha = 0.6
-        )
-        
-        ax_reward.plot([dates[0], dates[-1]], [0,0], '--', color = "black", linewidth = 0.5, alpha = 0.6)
-        ax_reward.set_ylim(top = min(rewards) + 2*(max(rewards) - min(rewards)))
         for pair in self.pairs:
             ax.plot(
                 dates,
@@ -108,13 +97,9 @@ class PerformanceChartRenderer(AbstractRenderer):
                 linewidth = 0.7, label = f"Price of {pair}"
             )
         ax.set_yscale("log")
+        ax.set_title(f"{self.get_trading_env().mode.name.capitalize()}")
         ax.grid(color='lightgray', linestyle='--', linewidth=0.5)
-        fig.legend(loc = "upper center", fontsize = 6)
-
-        # Plot
-        char_width = (shutil.get_terminal_size().columns - 19) //2
-        line = "=".join(["" for _ in range(char_width)])
-        print("\n", color.BOLD, f"{line} EPISODE COMPLETED {line}", color.END)
+        fig.legend(loc = "lower center", fontsize = 6)
         plt.show()
 
         print(
