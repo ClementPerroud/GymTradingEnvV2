@@ -9,16 +9,17 @@ from ..managers.portfolio import PortfolioManager
 from ..time_managers import AbstractTimeManager
 
 class PerformanceReward(AbstractReward):
-    def __init__(self, initial_portfolio :Portfolio, quote_asset : Asset, multiply_by = 800) -> None:
+    def __init__(self, quote_asset : Asset, multiply_by = 800) -> None:
         super().__init__(multiply_by= multiply_by)
-        self.initial_portfolio = initial_portfolio
         self.quote_asset = quote_asset
         self.portfolio_manager = PortfolioManager(quote_asset=self.quote_asset)
     
-    async def reset(self, date : datetime, seed = None):
+    async def reset(self, seed = None):
         self.exchange_manager  = self.get_trading_env().exchange_manager
         self.time_manager = self.get_trading_env().time_manager
-        self.last_valuation = await self.__compute_valuation(portfolio= self.initial_portfolio, date= date)
+        
+        portfolio = await self.exchange_manager.get_portfolio()
+        self.last_valuation = await self.__compute_valuation(portfolio= portfolio, date= await self.time_manager.get_current_datetime())
 
     async def __compute_valuation(self, portfolio : Portfolio, date : datetime = None):
         return await self.portfolio_manager.valuation(

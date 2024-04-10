@@ -1,6 +1,7 @@
 
 import pandas as pd
 import numpy as np
+import pytz
 from datetime import datetime
 from functools import partial
 from warnings import warn
@@ -84,20 +85,22 @@ class HistoricalSimulation(AbstractPairSimulation, AbstractEnder):
             if col in self.name_aggreation:
                 self.aggregation[col] = partial(func, i = i, col = col)
 
-    async def reset(self, date : datetime, seed = None) -> None:
-        np_date = np.datetime64(date)
+    async def reset(self, seed = None) -> None:
+        self.time_manager = self.get_trading_env().time_manager
+        date = await self.time_manager.get_current_datetime()
+        np_date = np.datetime64(date.astimezone(pytz.UTC).replace(tzinfo = None))
         if np_date >= self.dates[-1] or np_date <= self.dates[0]: raise ValueError(f"This date {date} is not valid. Please select a date between {self.dates[0]} and {self.dates[-1]}")
 
         self.past_index = np.searchsorted(self.dates, np_date, side="left")
         self.past_date = date
-        await super().reset(date= date, seed = seed)
+        await super().reset(seed = seed)
         
     def __aggregrate(self, array: np.ndarray):
         return {col : agg(array) for col, agg in self.aggregation.items()}
 
         
     async def forward(self, date : datetime) -> None:
-        np_date = np.datetime64(date)
+        np_date = np.datetime64(date.astimezone(pytz.UTC).replace(tzinfo = None))
         await super().forward(date= date)
 
         index = np.searchsorted(self.dates, np_date, side="right")-1

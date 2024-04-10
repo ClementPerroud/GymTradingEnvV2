@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import asyncio
 
-from .abstract_trading_env import AbstractTradingEnv
+from .abstract_trading_env import AbstractTradingEnv, Mode
 from ..time_managers import AbstractTimeManager
 from ..exchanges import AbstractExchange
 from ..rewards import AbstractReward
@@ -18,6 +18,7 @@ from ..renderers import AbstractRenderer
 class RLTradingEnv(AbstractTradingEnv):
     instances = {}
     def __init__(self,
+            mode : Mode,
             time_manager : AbstractTimeManager,
             exchange_manager : AbstractExchange,
             action_manager : AbstractActionManager,
@@ -27,7 +28,7 @@ class RLTradingEnv(AbstractTradingEnv):
             renderers : List[AbstractRenderer] = [],
         ) -> None:
         
-        super().__init__(time_manager= time_manager, exchange_manager= exchange_manager, enders= enders)
+        super().__init__(mode = mode, time_manager= time_manager, exchange_manager= exchange_manager, enders= enders)
 
         self.action_manager = action_manager
         self.observer = observer
@@ -38,9 +39,9 @@ class RLTradingEnv(AbstractTradingEnv):
         self.observation_space = self.observer.observation_space()
     
 
-    async def reset(self, date : datetime, seed = None, **kwargs):
+    async def reset(self, seed = None, **kwargs):
         self.__step = 0
-        await super().__reset__(date= date, seed = seed, **kwargs)
+        await super().__reset__(seed = seed, **kwargs)
         obs = await self.observer.get_obs()
         return obs, {}
 

@@ -21,10 +21,10 @@ class ComputedDifferentialSharpeRatioReward(AbstractReward, AbstractEnder):
         self.portfolio_manager = PortfolioManager(quote_asset=self.quote_asset)
 
     
-    async def reset(self, date : datetime, seed = None):
+    async def reset(self, seed = None):
         self.exchange_manager  = self.get_trading_env().exchange_manager
         self.time_manager = self.get_trading_env().time_manager
-        self.last_valuation = await self.__compute_valuation(portfolio= self.initial_portfolio, date= date)
+        self.last_valuation = await self.__compute_valuation(portfolio= self.initial_portfolio, date= await self.time_manager.get_current_datetime())
         # self.A_last = 0
         # self.B_last = 0
         self.steps = 0
@@ -86,11 +86,10 @@ class ComputedDifferentialSharpeRatioReward(AbstractReward, AbstractEnder):
     
 
 class MoodyDifferentialSharpeRatioReward(AbstractReward, AbstractEnder):
-    def __init__(self, eta : Decimal, initial_portfolio :Portfolio, quote_asset : Asset, multiply_by = 800) -> None:
+    def __init__(self, eta : Decimal, quote_asset : Asset, multiply_by = 800) -> None:
         super().__init__(multiply_by= multiply_by)
         self.eta = eta
         self.stabilization_steps = int(1 / (self.eta ** Decimal('0.6'))) + 10
-        self.initial_portfolio = initial_portfolio
         self.quote_asset = quote_asset
         self.portfolio_manager = PortfolioManager(quote_asset=self.quote_asset)
 
@@ -99,10 +98,13 @@ class MoodyDifferentialSharpeRatioReward(AbstractReward, AbstractEnder):
         ratio = Decimal.from_float(self.steps / self.stabilization_steps)
         return Decimal("0.1") * (1 - ratio) + self.eta * ratio
     
-    async def reset(self, date : datetime, seed = None):
+    async def reset(self, seed = None):
         self.exchange_manager  = self.get_trading_env().exchange_manager
         self.time_manager = self.get_trading_env().time_manager
-        self.last_valuation = await self.__compute_valuation(portfolio= self.initial_portfolio, date= date)
+
+        portfolio = await self.exchange_manager.get_portfolio()
+        self.last_valuation = await self.__compute_valuation(portfolio= portfolio, date= await self.time_manager.get_current_datetime())
+
         self.A_last = Decimal("0")
         self.B_last = Decimal("0")
         self.steps = 0

@@ -14,7 +14,10 @@ class ExchangeManager(AbstractExchange):
     def __init__(self, exchange : AbstractExchange) -> None:
         self.exchange = exchange
     
-    async def reset(self, date : datetime, seed = None):
+    @property
+    def order_index(self):
+        return super().order_index + 1
+    async def reset(self, seed = None):
         # Reset cached memory
         self.get_available_pairs.cache_clear()
         self.__lru_get_portfolio.cache_clear()

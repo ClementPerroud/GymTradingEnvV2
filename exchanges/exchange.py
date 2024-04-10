@@ -3,12 +3,16 @@ from decimal import Decimal
 from datetime import datetime
 from typing import List
 
-from ..core import Pair, Quotation, Portfolio
+from ..core import Pair, Quotation, Portfolio, Value
 from ..element import AbstractEnvironmentElement
 from .responses import OrderResponse, TickerResponse
 from .exceptions import PairNotFound
 
-class AbstractExchange(AbstractEnvironmentElement, ABC):        
+class AbstractExchange(AbstractEnvironmentElement, ABC):
+    @property
+    def order_index(self):
+        return -100
+    
     @abstractmethod
     async def get_available_pairs(self) -> List[Pair]:
         ...
@@ -28,5 +32,5 @@ class AbstractExchange(AbstractEnvironmentElement, ABC):
         ...
 
     @abstractmethod
-    async def market_order(self, quantity : Decimal, pair : Pair) -> OrderResponse:
+    async def market_order(self, quantity : Value, pair : Pair) -> OrderResponse:
         ...

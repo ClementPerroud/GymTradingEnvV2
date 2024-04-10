@@ -1,9 +1,16 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import List
+from typing import List, TYPE_CHECKING
+from enum import Enum
 
 from .utils.class_searcher import class_deep_search
-from . import environments
+
+if TYPE_CHECKING:
+    from .environments import AbstractTradingEnv
+
+class Mode(Enum):
+    SIMULATION = 0
+    PRODUCTION = 1
 
 class AbstractEnvironmentElement(ABC):
     def __init__(self) -> None:
@@ -19,7 +26,7 @@ class AbstractEnvironmentElement(ABC):
         self.__trading_env = trading_env
 
 
-    def get_trading_env(self) -> "environments.RLTradingEnv":
+    def get_trading_env(self) -> "AbstractTradingEnv":
         if self.__trading_env is None:
             ValueError("""
             Please provide the related trading_env during 
@@ -30,11 +37,14 @@ class AbstractEnvironmentElement(ABC):
             """)
         return self.__trading_env
 
+    @property
+    def order_index(self):
+        return 0
 
-    async def __reset__(self, date : datetime, seed = None):
-        return await self.reset(date= date, seed= seed)
+    async def __reset__(self, seed = None):
+        return await self.reset(seed= seed)
     
-    async def reset(self, date : datetime, seed = None):
+    async def reset(self, seed = None):
         pass
 
     async def __forward__(self, date : datetime, seed = None):
@@ -43,11 +53,13 @@ class AbstractEnvironmentElement(ABC):
     async def forward(self, date : datetime, seed = None):
         pass
 
-def element_deep_search(element, excluded = []) -> List[AbstractEnvironmentElement]:
+
+def element_deep_search(element,  excluded_classes = []) -> List[AbstractEnvironmentElement]:
     return class_deep_search(
-        condition = lambda element : isinstance(element, AbstractEnvironmentElement),
+        condition = lambda elem : isinstance(elem, AbstractEnvironmentElement),
         element= element,
         list_to_fill= [],
         visited= [],
-        excluded = excluded + [element]
+        excluded = [id(element)],
+        excluded_classes = tuple(excluded_classes)
     )

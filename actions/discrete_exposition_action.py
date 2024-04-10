@@ -14,7 +14,7 @@ class DiscreteExpositionAction(AbstractAction):
         self.target_exposition = PortfolioExposition(expositions= target_exposition)
         self.portfolio_manager = PortfolioManager(quote_asset = self.quote_asset)
         
-    async def reset(self, date : datetime, seed = None):
+    async def reset(self, seed = None):
         self.exchange_manager = self.get_trading_env().exchange_manager
 
     async def execute_order(self, asset_to_decrease : Asset, asset_to_increase : Asset, quantity_quote_asset : Value):

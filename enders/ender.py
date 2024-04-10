@@ -15,21 +15,7 @@ class AbstractEnder(AbstractEnvironmentElement, ABC):
         """
         ...
 
-def ender_deep_search(element) -> List[AbstractEnder]:
-    return class_deep_search(
-        condition = lambda element : isinstance(element, AbstractEnder),
-        element= element,
-        list_to_fill= [],
-        visited= [],
-        excluded= [element]
-    )
+def ender_deep_search(list_elements : List) -> List[AbstractEnder]:
+    return [element for element in list_elements if isinstance(element, AbstractEnder)]
 
-def element_deep_search(element, excluded = []) -> List[AbstractEnvironmentElement]:
-    return class_deep_search(
-        condition = lambda element : isinstance(element, AbstractEnvironmentElement),
-        element= element,
-        list_to_fill= [],
-        visited= [],
-        excluded = excluded + [element]
-    )
 

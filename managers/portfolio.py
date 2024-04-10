@@ -12,7 +12,7 @@ class PositionManager(AbstractEnvironmentElement):
     def __init__(self,  quote_asset : Asset) -> None:
         self.quote_asset = quote_asset
 
-    async def reset(self, date : datetime, seed = None):
+    async def reset(self, seed = None):
         self.exchange_manager = self.get_trading_env().exchange_manager
 
     async def valuation(self, position : Value, date : datetime = None) -> Value:
@@ -27,7 +27,7 @@ class PortfolioManager(AbstractEnvironmentElement):
         self.quote_asset = quote_asset
         self.position_manager = PositionManager(quote_asset= self.quote_asset)
 
-    async def reset(self, date : datetime, seed = None):
+    async def reset(self, seed = None):
         self.exchange_manager = self.get_trading_env().exchange_manager
 
     async def __valuations(self, portfolio : Portfolio, date : datetime = None) -> Dict[Asset, Value]:

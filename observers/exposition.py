@@ -15,7 +15,7 @@ class ExpositionObserver(AbstractObserver):
         self.quote_asset = quote_asset
         self.portfolio_manager = PortfolioManager(quote_asset=self.quote_asset)
 
-    async def reset(self, date : datetime, seed = None) -> None:
+    async def reset(self, seed = None) -> None:
         self.time_manager = self.get_trading_env().time_manager
         self.exchange_manager = self.get_trading_env().exchange_manager
     

@@ -21,7 +21,7 @@ class TickerObserver(AbstractObserver):
         self.mean_steps = mean_steps
         self.memory_size = self.simulation_warmup_steps + 10
         self.__scale = np.array([0.005, 0.005, 0.005, 0.005, 0.75])
-    async def reset(self, date : datetime, seed = None) -> None:
+    async def reset(self, seed = None) -> None:
         self.__lru_get_obs.cache_clear()
         
         self.time_manager = self.get_trading_env().time_manager

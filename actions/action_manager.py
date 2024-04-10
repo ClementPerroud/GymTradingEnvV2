@@ -13,7 +13,7 @@ class AbstractActionManager(AbstractEnvironmentElement, ABC):
         super().__init__()
         self.action_history = {}
 
-    async def reset(self, date : datetime, seed = None):
+    async def reset(self, seed = None):
         self.time_manager = self.get_trading_env().time_manager
 
     async def get_action(self, date : datetime = None):

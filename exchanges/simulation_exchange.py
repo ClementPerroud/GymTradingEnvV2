@@ -25,10 +25,9 @@ class SimulationExchange(AbstractExchange):
         self.asset_yearly_borrowing_interest = asset_yearly_borrowing_interest
         self.trading_fees_ratio = Decimal('1') - trading_fees_pct
 
-    async def reset(self, date : datetime, seed = None):
+    async def reset(self, seed = None):
         self.portfolio = deepcopy(self.initial_portfolio)
         self.time_manager : AbstractTimeManager = self.get_trading_env().time_manager
-        await self.time_manager.reset(date=date, seed= seed)
 
     async def forward(self, date: datetime, seed=None):
         await super().forward(date, seed)
@@ -45,6 +44,7 @@ class SimulationExchange(AbstractExchange):
                         asset=asset
                     )
                 )
+        
     async def get_available_pairs(self) -> List[Pair]: 
         return list(self.pair_simulations.keys())
     
@@ -55,7 +55,7 @@ class SimulationExchange(AbstractExchange):
         data = self.pair_simulations[pair].get_data(date = date)
         return TickerResponse(
             status_code = 200,
-            date_open= await self.time_manager.get_historical_datetime(step_back=1),
+            date_open= await self.time_manager.get_historical_datetime(step_back=1, relative_date= date),
             date_close= date,
             open = Quotation(Decimal(data["open"]), pair),
             high = Quotation(Decimal(data["high"]), pair),

@@ -22,6 +22,8 @@ class Value:
         return f"{self.amount} {self.asset}"
     
     def __add__(self, other):
+        if other is None:
+            return self
         if isinstance(other, Value):
             _asset_check(self.asset, other.asset)
             new_value = copy(self)

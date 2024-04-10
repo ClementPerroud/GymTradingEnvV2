@@ -3,6 +3,10 @@ from datetime import datetime
 from ..element import AbstractEnvironmentElement
 
 class AbstractTimeManager(AbstractEnvironmentElement, ABC):
+    @property
+    def order_index(self):
+        return -200
+    
     @abstractmethod
     async def get_historical_datetime(self, step_back = 0, relative_date : datetime = None) -> datetime:
         ...

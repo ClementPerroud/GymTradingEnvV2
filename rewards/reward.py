@@ -8,7 +8,7 @@ class AbstractReward(AbstractEnvironmentElement, ABC):
         super().__init__()
     
     @abstractmethod
-    async def reset(self, date : datetime, seed = None) -> None:
+    async def reset(self, seed = None) -> None:
         ...
     
     @abstractmethod

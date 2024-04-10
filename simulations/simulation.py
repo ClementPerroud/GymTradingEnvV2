@@ -7,18 +7,18 @@ class AbstractPairSimulation(AbstractEnvironmentElement, ABC):
         super().__init__()
         self.memory_size = memory_size
 
-    async def __reset__(self, date : datetime, seed = None) -> None:
-        self.current_date = date
+    async def __reset__(self, seed = None) -> None:
+        self.time_manager = self.get_trading_env().time_manager
+        self.current_date = await self.time_manager.get_current_datetime()
         self._data_memory = {}
-        return await self.reset(date= date, seed= seed)
+        return await self.reset(seed= seed)
     
     @abstractmethod
-    async def reset(self, date : datetime, seed = None) -> None:
+    async def reset(self, seed = None) -> None:
         ...
     
-
     async def __forward__(self, date : datetime) -> None:
-        if date < self.current_date: raise ValueError(f"date must be ahead current date : {date < self.current_date}")
+        if date < self.current_date: raise ValueError(f"date must be ahead current date : while (date) {date} < (self.current_date) {self.current_date} {self.current_date}")
         self.current_date = date
         return await self.forward(date= date)
 

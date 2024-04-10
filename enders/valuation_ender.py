@@ -15,7 +15,7 @@ class ValuationEnder(AbstractEnder):
         self.quote_asset = valuation_threeshold.asset
         self.portfolio_manager = PortfolioManager(quote_asset= self.quote_asset)
 
-    async def reset(self, date : datetime, seed = None):
+    async def reset(self, seed = None):
         self.exchange_manager = self.get_trading_env().exchange_manager
 
     

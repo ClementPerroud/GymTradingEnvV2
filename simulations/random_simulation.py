@@ -26,8 +26,9 @@ class RandomPairSimulation(AbstractPairSimulation):
         return interval_mean, interval_std
 
     
-    async def reset(self, date : datetime, seed = None) -> None:
-        self._date = date
+    async def reset(self, seed = None) -> None:
+        self.time_manager = self.get_trading_env().time_manager
+        self._date = await self.time_manager.get_current_datetime()
         self.last_close = self.initial_price_amount
 
 

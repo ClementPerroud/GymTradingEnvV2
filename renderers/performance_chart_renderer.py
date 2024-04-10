@@ -1,5 +1,6 @@
 from datetime import datetime,timedelta
 import asyncio
+import shutil
 import matplotlib.pyplot as plt
 from typing import List
 from collections import deque
@@ -19,12 +20,12 @@ class PerformanceChartRenderer(AbstractRenderer):
         self.pairs = pairs
         self.portfolio_manager = PortfolioManager(quote_asset= self.quote_asset)
 
-    async def reset(self, date : datetime, seed = None):
+    async def reset(self, seed = None):
         self.exchange_manager = self.get_trading_env().exchange_manager
         self.time_manager = self.get_trading_env().time_manager
         self.memory = deque()
         
-    async def render_step(self, action, next_obs, reward, terminated, truncated, trainable, infos):
+    async def render_step(self, action, next_obs, reward, terminated, truncated, trainable, infshutil):
         date = await self.time_manager.get_current_datetime()
         portfolio = await self.exchange_manager.get_portfolio()
         results = await asyncio.gather(
@@ -43,6 +44,8 @@ class PerformanceChartRenderer(AbstractRenderer):
         })
 
     async def render_episode(self):
+        if len(self.memory) <= 1: return
+
         # Extracting data from memory deque
         dates, valuations, rewards = [], [], []
         pair_prices = {pair : [] for pair in self.pairs}
@@ -53,6 +56,8 @@ class PerformanceChartRenderer(AbstractRenderer):
             rewards.append(elem["reward"] if elem["trainable"] else 0)
             for pair in self.pairs:
                 pair_prices[pair].append(elem[f"price_{pair}"])
+        
+
         valuations = np.array(valuations)
 
         # Analysing and computation of :
@@ -107,13 +112,17 @@ class PerformanceChartRenderer(AbstractRenderer):
         fig.legend(loc = "upper center", fontsize = 6)
 
         # Plot
-        print(color.BOLD, "EPISODE COMPLETED", color.END)
+        char_width = (shutil.get_terminal_size().columns - 19) //2
+        line = "=".join(["" for _ in range(char_width)])
+        print("\n", color.BOLD, f"{line} EPISODE COMPLETED {line}", color.END)
         plt.show()
 
         print(
+            color.BOLD,
             f"Sharpe Ratio : {sharpe_ratio:0.2f}\t",
             f"Annualized Portfolio Return : {100*annualized_portfolio_return:0.2f}%\t",
-            *[f"Annualized {pair} Return : {100*annualized_market_returns[pair]:0.2f}%\t" for pair in self.pairs]
+            *[f"Annualized {pair} Return : {100*annualized_market_returns[pair]:0.2f}%\t" for pair in self.pairs],
+            end= color.END + "\n"
         )
         self.memory.clear()
 

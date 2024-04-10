@@ -88,8 +88,7 @@ async def main():
         ]
     )
 
-    date = datetime(2017, 8, 18)
-    obs, infos = await trading_environment.reset(date = date)
+    obs, infos = await trading_environment.reset()
     terminated, truncated = False, False
     step = 0
 
