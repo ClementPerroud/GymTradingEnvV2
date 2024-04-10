@@ -3,12 +3,12 @@ from datetime import datetime
 import asyncio
 
 from ..core import Asset, Portfolio
-from .reward import AbstractReward
+from .rewarder import AbstractRewarder
 from ..exchanges import AbstractExchange
 from ..managers.portfolio import PortfolioManager
 from ..time_managers import AbstractTimeManager
 
-class PerformanceReward(AbstractReward):
+class PerformanceRewarder(AbstractRewarder):
     def __init__(self, quote_asset : Asset, multiply_by = 800) -> None:
         super().__init__(multiply_by= multiply_by)
         self.quote_asset = quote_asset

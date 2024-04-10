@@ -9,7 +9,7 @@ from .simulations import RandomPairSimulation, HistoricalSimulation
 from .exchanges import SimulationExchange
 from .actions import DiscreteActionManager, DiscreteExpositionAction, DiscreteDoNothing
 from .observers import TickerObserver, RecurrentObserver
-from .rewards import PerformanceReward
+from .rewarders import PerformanceReward
 from .enders import ValuationEnder
 from .core import Portfolio, Asset, Value, Pair
 

@@ -4,14 +4,14 @@ import asyncio
 from decimal import Decimal
 
 from ..core import Asset, Portfolio
-from .reward import AbstractReward
+from .rewarder import AbstractRewarder
 from ..exchanges import AbstractExchange
 from ..managers.portfolio import PortfolioManager
 from ..time_managers import AbstractTimeManager
 from ..enders import AbstractEnder
 from ..settings import SETTINGS
 
-class ComputedDifferentialSharpeRatioReward(AbstractReward, AbstractEnder):
+class ComputedDifferentialSharpeRatioRewarder(AbstractRewarder, AbstractEnder):
     def __init__(self, eta : Decimal, initial_portfolio :Portfolio, quote_asset : Asset, multiply_by = 800) -> None:
         super().__init__(multiply_by= multiply_by)
         self.eta = eta
@@ -85,7 +85,7 @@ class ComputedDifferentialSharpeRatioReward(AbstractReward, AbstractEnder):
         )  
     
 
-class MoodyDifferentialSharpeRatioReward(AbstractReward, AbstractEnder):
+class MoodyDifferentialSharpeRatioRewarder(AbstractRewarder, AbstractEnder):
     def __init__(self, eta : Decimal, quote_asset : Asset, multiply_by = 800) -> None:
         super().__init__(multiply_by= multiply_by)
         self.eta = eta

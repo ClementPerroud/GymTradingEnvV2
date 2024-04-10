@@ -9,7 +9,7 @@ import asyncio
 from .abstract_trading_env import AbstractTradingEnv, Mode
 from ..time_managers import AbstractTimeManager
 from ..exchanges import AbstractExchange
-from ..rewards import AbstractReward
+from ..rewarders import AbstractRewarder
 from ..actions  import AbstractActionManager
 from ..observers  import AbstractObserver
 from ..enders import AbstractEnder, CompositeEnder, ender_deep_search
@@ -23,7 +23,7 @@ class RLTradingEnv(AbstractTradingEnv):
             exchange_manager : AbstractExchange,
             action_manager : AbstractActionManager,
             observer : AbstractObserver,
-            reward : AbstractReward,
+            rewarder : AbstractRewarder,
             enders : List[AbstractEnder] = [],
             renderers : List[AbstractRenderer] = [],
         ) -> None:
@@ -32,7 +32,7 @@ class RLTradingEnv(AbstractTradingEnv):
 
         self.action_manager = action_manager
         self.observer = observer
-        self.reward = reward
+        self.rewarder = rewarder
         self.renderers = renderers
 
         self.action_space = self.action_manager.action_space()
@@ -55,7 +55,7 @@ class RLTradingEnv(AbstractTradingEnv):
 
         # At t+1 : Perform checks, get observations, get rewards
         obs = await self.observer.get_obs()
-        reward = await self.reward.get()
+        reward = await self.rewarder.get()
         infos = {"date": await self.time_manager.get_current_datetime()}
 
         ## Perform ender checks with CompositeEnder

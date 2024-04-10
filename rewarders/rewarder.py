@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 
 from ..element import AbstractEnvironmentElement
-class AbstractReward(AbstractEnvironmentElement, ABC):
+class AbstractRewarder(AbstractEnvironmentElement, ABC):
     def __init__(self, multiply_by = 1) -> None:
         self.multiply_by = multiply_by
         super().__init__()
