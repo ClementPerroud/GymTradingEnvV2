@@ -1,5 +1,6 @@
 import asyncio
 import pytz
+import numpy as np
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 from typing import Tuple
@@ -16,6 +17,10 @@ class IntervalTimeManager(AbstractTimeManager, AbstractEnder):
         self.simulation_start_date = simulation_start_date
         self.simulation_end_date = simulation_end_date
 
+    def set_random_offet(self, base : timedelta):
+        n = int(self.interval/base)
+        i = np.random.randint(low = 0, high= n)
+        self.offset = base * i 
 
     async def reset(self, seed = None)->None:
         await super().reset(seed= seed)
@@ -25,9 +30,9 @@ class IntervalTimeManager(AbstractTimeManager, AbstractEnder):
             self.__current_datetime = self.simulation_start_date
             
         elif self.mode.value == Mode.PRODUCTION.value:
-            date = datetime.now(pytz.UTC)
-            self.__current_datetime = floor_time(date, self.interval, self.offset)
-            print(self.__current_datetime)
+            self.__current_datetime = datetime.now(pytz.UTC)
+
+        self.__current_datetime = floor_time(self.__current_datetime, self.interval, self.offset)
         
     async def get_current_datetime(self) -> datetime:
         return self.__current_datetime
