@@ -14,11 +14,12 @@ from ..utils.speed_analyser import SpeedAnalyser
 text_kwargs = dict(ha='center', va='center', fontsize=28, color='C1')
 
 class PerformanceChartRenderer(AbstractRenderer):
-    def __init__(self, pairs, quote_asset) -> None:
+    def __init__(self, pairs, quote_asset, title = "Performance Chart") -> None:
         super().__init__()
         self.quote_asset = quote_asset
         self.pairs = pairs
         self.portfolio_manager = PortfolioManager(quote_asset= self.quote_asset)
+        self.title = title
 
     async def reset(self, seed = None):
         self.exchange_manager = self.get_trading_env().exchange_manager
@@ -97,7 +98,7 @@ class PerformanceChartRenderer(AbstractRenderer):
                 linewidth = 0.7, label = f"Price of {pair}"
             )
         ax.set_yscale("log")
-        ax.set_title(f"{self.get_trading_env().mode.name.capitalize()}")
+        ax.set_title(self.title)
         ax.grid(color='lightgray', linestyle='--', linewidth=0.5)
         fig.legend(loc = "lower center", fontsize = 6)
         plt.show()
