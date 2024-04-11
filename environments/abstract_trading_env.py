@@ -18,7 +18,6 @@ class AbstractTradingEnv(gym.Env, CompositeEnder, ABC):
         self.time_manager = time_manager
         self.exchange_manager = exchange_manager
 
-        self.searched = False
         self.initial_enders = enders
         super().__init__()
 
@@ -27,14 +26,13 @@ class AbstractTradingEnv(gym.Env, CompositeEnder, ABC):
         ...
 
     async def __reset__(self, seed = None):
-        if not self.searched:
-            env_elements : List[AbstractEnvironmentElement] = element_deep_search(self, excluded_classes= [AbstractTradingEnv])
-            order_indexes = np.argsort([elem.order_index for elem in env_elements])
-            self.env_elements = [env_elements[i] for i in order_indexes] # Making the list sorted on the "order_index" properties of the elements 
+        self.env_elements, self.enders = [], []
+        env_elements : List[AbstractEnvironmentElement] = element_deep_search(self, excluded_classes= [AbstractTradingEnv])
+        order_indexes = np.argsort([elem.order_index for elem in env_elements])
+        self.env_elements = [env_elements[i] for i in order_indexes] # Making the list sorted on the "order_index" properties of the elements 
 
-            enders = ender_deep_search(self.env_elements) + self.initial_enders
-            self.enders = list(dict.fromkeys(enders)) # Exclude doublons
-            self.searched = True
+        enders = ender_deep_search(self.env_elements) + self.initial_enders
+        self.enders = list(dict.fromkeys(enders)) # Exclude doublons
         
         # Prepare for reset
         warm_steps_needed = 0
