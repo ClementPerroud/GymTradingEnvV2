@@ -7,7 +7,7 @@ from copy import deepcopy
 from functools import lru_cache
 from async_lru import alru_cache
 from typing import List
-from binance.client import AsyncClient
+from binance import AsyncClient
 
 from ..core import Asset, Pair, Quotation, Portfolio, Value
 from ..simulations.simulation import AbstractPairSimulation

@@ -1,6 +1,5 @@
 from datetime import datetime,timedelta
 import asyncio
-import shutil
 import matplotlib.pyplot as plt
 from typing import List
 from collections import deque
@@ -26,7 +25,7 @@ class PerformanceChartRenderer(AbstractRenderer):
         self.time_manager = self.get_trading_env().time_manager
         self.memory = deque()
         
-    async def render_step(self, action, next_obs, reward, terminated, truncated, trainable, infshutil):
+    async def render_step(self, action, next_obs, reward, terminated, truncated, trainable, infos):
         date = await self.time_manager.get_current_datetime()
         portfolio = await self.exchange_manager.get_portfolio()
         results = await asyncio.gather(

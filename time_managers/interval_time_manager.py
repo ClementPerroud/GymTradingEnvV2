@@ -17,7 +17,7 @@ class IntervalTimeManager(AbstractTimeManager, AbstractEnder):
         self.simulation_start_date = simulation_start_date
         self.simulation_end_date = simulation_end_date
 
-    def set_random_offet(self, base : timedelta):
+    def set_random_offset(self, base : timedelta):
         n = int(self.interval/base)
         i = np.random.randint(low = 0, high= n)
         self.offset = base * i 

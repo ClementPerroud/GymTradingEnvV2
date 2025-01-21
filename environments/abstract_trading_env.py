@@ -27,14 +27,18 @@ class AbstractTradingEnv(gym.Env, CompositeEnder, ABC):
 
     async def __reset__(self, seed = None):
         self.env_elements, self.enders = [], []
+
+        # Get all the environment elements
         env_elements : List[AbstractEnvironmentElement] = element_deep_search(self, excluded_classes= [AbstractTradingEnv])
+
+        # Sort the environment elements by order_index
         order_indexes = np.argsort([elem.order_index for elem in env_elements])
-        self.env_elements = [env_elements[i] for i in order_indexes] # Making the list sorted on the "order_index" properties of the elements 
+        self.env_elements = [env_elements[i] for i in order_indexes]
 
         enders = ender_deep_search(self.env_elements) + self.initial_enders
         self.enders = list(dict.fromkeys(enders)) # Exclude doublons
         
-        # Prepare for reset
+        # Prepare the environment elements and retrieve the warmup steps needed
         warm_steps_needed = 0
         for element in self.env_elements:
             element.set_trading_env(self)
@@ -57,6 +61,7 @@ class AbstractTradingEnv(gym.Env, CompositeEnder, ABC):
         ...
 
     async def __step__(self):
+        # Perform a step in the environment
         await self.time_manager.step()
         current_date = await self.time_manager.get_current_datetime()
         for element in self.env_elements:
