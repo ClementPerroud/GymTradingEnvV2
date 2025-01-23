@@ -3,12 +3,12 @@ from functools import lru_cache
 from datetime import datetime
 from decimal import Decimal
 from typing import List
-from async_lru import alru_cache
 
 from ..element import AbstractEnvironmentElement
 from ..exchanges import AbstractExchange
 from ..exchanges.responses import OrderResponse, TickerResponse
 from ..core import Pair, Asset, Value, Portfolio
+from ..utils.async_lru import alru_cache
 
 class ExchangeManager(AbstractExchange):
     def __init__(self, exchange : AbstractExchange) -> None:
@@ -17,12 +17,13 @@ class ExchangeManager(AbstractExchange):
     @property
     def order_index(self):
         return super().order_index + 1
+    
     async def reset(self, seed = None):
         # Reset cached memory
-        self.get_available_pairs.cache_clear()
-        self.__lru_get_portfolio.cache_clear()
-        self.__lru_get_quotation.cache_clear()
-        self.__lru_get_ticker.cache_clear()
+        # self.get_available_pairs.cache_clear()
+        # self.__lru_get_portfolio.cache_clear()
+        # self.__lru_get_quotation.cache_clear()
+        # self.__lru_get_ticker.cache_clear()
         
         self.time_manager = self.get_trading_env().time_manager
         # Create a set for unique assets
@@ -40,7 +41,7 @@ class ExchangeManager(AbstractExchange):
         # Used for caching portfolio.
         self.nb_orders = 0
 
-    @alru_cache(maxsize=1)
+    # @alru_cache(maxsize=1)
     async def get_available_pairs(self) -> List[Pair]:
         return await self.exchange.get_available_pairs()
     
@@ -50,7 +51,7 @@ class ExchangeManager(AbstractExchange):
         if date is None: date = await self.time_manager.get_current_datetime()
         return await self.__lru_get_ticker(pair= pair, date= date)
     
-    @alru_cache(maxsize = 1_000)
+    # @alru_cache(maxsize = 1_000)
     async def __lru_get_ticker(self, pair : Pair, date : datetime) -> TickerResponse:
         return await self.exchange.get_ticker(pair= pair, date= date)
 
@@ -61,7 +62,7 @@ class ExchangeManager(AbstractExchange):
         the portfolio did not change (= when no new trade occurs)"""
         return await self.__lru_get_portfolio(nb_orders=self.nb_orders)
     
-    @alru_cache(maxsize = 100)
+    # @alru_cache(maxsize = 100)
     async def __lru_get_portfolio(self, nb_orders):
         return await self.exchange.get_portfolio()
 
@@ -115,7 +116,7 @@ class ExchangeManager(AbstractExchange):
         if date is None: date = await self.time_manager.get_current_datetime()
         return await self.__lru_get_quotation(pair = pair, date = date)
     
-    @alru_cache(maxsize=1_000)
+    # @alru_cache(maxsize=1_000)
     async def __lru_get_quotation(self, pair : Pair, date : datetime):
         from_asset = pair.asset
         to_asset = pair.quote_asset

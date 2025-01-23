@@ -16,6 +16,7 @@ class DiscreteExpositionAction(AbstractAction):
         
     async def reset(self, seed = None):
         self.exchange_manager = self.get_trading_env().exchange_manager
+        self.time_manager = self.get_trading_env().time_manager
 
     async def execute_order(self, asset_to_decrease : Asset, asset_to_increase : Asset, quantity_quote_asset : Value):
         quote_asset = quantity_quote_asset.asset
@@ -32,12 +33,15 @@ class DiscreteExpositionAction(AbstractAction):
 
     async def execute(self):
         current_position = await self.exchange_manager.get_portfolio()
+        date = await self.time_manager.get_current_datetime()
         total_valuation, current_exposition = await asyncio.gather(
             self.portfolio_manager.valuation(
-                portfolio= current_position
+                portfolio= current_position,
+                date= date
             ),
             self.portfolio_manager.exposition(
-                portfolio= current_position
+                portfolio= current_position,
+                date= date
             )
         )
         quote_asset = total_valuation.asset
@@ -46,7 +50,7 @@ class DiscreteExpositionAction(AbstractAction):
         diff_positions_percent = diff_exposition.get_positions()
 
         # Prepare
-        list_position_to_increase : List[Value] = [] # Position to gincrease
+        list_position_to_increase : List[Value] = [] # Position to increase
         list_position_to_decrease : List[Value] = [] # Position to decrease
         for position in diff_positions_percent:
             if position.amount > 0: list_position_to_increase.append(position)

@@ -4,6 +4,7 @@ from typing import List, TYPE_CHECKING
 from enum import Enum
 
 from .utils.class_searcher import class_deep_search
+from .utils.speed_analyser import astep_timer
 
 if TYPE_CHECKING:
     from .environments import AbstractTradingEnv
@@ -22,7 +23,6 @@ class AbstractEnvironmentElement(ABC):
         return 0
 
     def set_trading_env(self, trading_env):
-        if self not in trading_env.env_elements: trading_env.env_elements.append(self)
         self.__trading_env = trading_env
 
 
@@ -41,12 +41,14 @@ class AbstractEnvironmentElement(ABC):
     def order_index(self):
         return 0
 
+    @astep_timer(step_name="Reset")
     async def __reset__(self, seed = None):
         return await self.reset(seed= seed)
     
     async def reset(self, seed = None):
         pass
 
+    @astep_timer(step_name="Forward")
     async def __forward__(self, date : datetime, seed = None):
         return await self.forward(date= date, seed= seed)
     
@@ -55,11 +57,7 @@ class AbstractEnvironmentElement(ABC):
 
 
 def element_deep_search(element,  excluded_classes = []) -> List[AbstractEnvironmentElement]:
-    return class_deep_search(
+    return list(class_deep_search(
         condition = lambda elem : isinstance(elem, AbstractEnvironmentElement),
-        element= element,
-        list_to_fill= [],
-        visited= [],
-        excluded = [id(element)],
-        excluded_classes = tuple(excluded_classes)
-    )
+        element= element
+    ))

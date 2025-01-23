@@ -6,6 +6,8 @@ from typing import List, Dict
 from ..core import Asset, Pair, Quotation, Portfolio, Value
 from ..simulations.simulation import AbstractPairSimulation
 from ..time_managers import AbstractTimeManager
+from ..utils.async_lru import alru_cache
+from ..utils.speed_analyser import astep_timer
 
 from .responses import OrderResponse, TickerResponse
 from .exceptions import PairNotFound
@@ -48,7 +50,9 @@ class SimulationExchange(AbstractExchange):
     async def get_available_pairs(self) -> List[Pair]: 
         return list(self.pair_simulations.keys())
     
-    async def get_ticker(self, pair : Pair, date : datetime = None) -> TickerResponse:
+    @astep_timer("Get Ticker", level= 2)
+    @alru_cache(maxsize= 1_000)
+    async def get_ticker(self, pair : Pair, date : datetime) -> TickerResponse:
         if pair not in self.pair_simulations : raise PairNotFound(pair= pair)
         if date is None:date = await self.time_manager.get_current_datetime()
 

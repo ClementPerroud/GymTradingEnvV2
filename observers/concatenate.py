@@ -53,7 +53,7 @@ class ArrayConcatenateObserver(AbstractObserver):
         tasks = []
         
         for sub_observer in self.sub_observers:
-            tasks.append(sub_observer.get_obs(date = date))
+            tasks.append(sub_observer.__get_obs__(date = date))
         results = await asyncio.gather(*tasks)
         
         for i in range(len(results)):

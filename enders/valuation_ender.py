@@ -17,11 +17,16 @@ class ValuationEnder(AbstractEnder):
 
     async def reset(self, seed = None):
         self.exchange_manager = self.get_trading_env().exchange_manager
+        self.time_manager = self.get_trading_env().time_manager
 
     
     async def check(self) -> Tuple[bool, bool]:
         portfolio = await self.exchange_manager.get_portfolio()
-        valuation = await self.portfolio_manager.valuation(portfolio = portfolio)
+        date = await self.time_manager.get_current_datetime()
+        valuation = await self.portfolio_manager.valuation(
+            portfolio = portfolio,
+            date = date
+        )
         terminated = valuation <= self.valuation_threeshold
 
         truncated = False

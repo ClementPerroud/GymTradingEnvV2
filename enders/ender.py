@@ -3,9 +3,14 @@ import asyncio
 from typing import List, Tuple
 
 from ..element import AbstractEnvironmentElement
-from ..utils.class_searcher import class_deep_search
+from ..utils.speed_analyser import astep_timer
 
 class AbstractEnder(AbstractEnvironmentElement, ABC):
+    
+    @astep_timer(step_name="Check")
+    async def __check__(self) -> Tuple[bool , bool, bool]:
+        return await self.check()
+    
     @abstractmethod
     async def check(self) -> Tuple[bool , bool, bool]:
         """_summary_

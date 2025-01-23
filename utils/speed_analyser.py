@@ -1,70 +1,129 @@
 import time
-from typing_extensions import Self
+import threading
+import contextvars
+from functools import wraps
 
-class SpeedAnalyser:
-    def __init__(self) -> None:
-        self.reset()
+# A context variable that holds the current active step, allowing nesting.
+current_step_var = contextvars.ContextVar("current_step", default=None)
 
-    def reset(self):
-        self.duration_steps = {}
-        self.start()
+
+class StepTimer:
+    """
+    Represents a single timed step in a hierarchical workflow.
+    """
+    __slots__ = ("name", "parent", "children", "count", "total_time",
+                 "_start_time", "lock")
+
+    def __init__(self, name: str, parent: "StepTimer" = None):
+        self.name = name
+        self.parent = parent
+        self.children = {}       # map step name -> StepTimer
+        self.count = 0
+        self.total_time = 0.0
+        self._start_time = None
+        self.lock = threading.RLock()
 
     def start(self):
-        self.current_timer = time.time()
-        self.current_step_name = None
+        with self.lock:
+            self.count += 1
+            self._start_time = time.perf_counter()
 
-    def step(self, name, sub_timer=False) -> Self:
-        self.end_step()
-        # Initialization if first time encountered
-        if name not in self.duration_steps.keys() and name is not None:
-            self.duration_steps[name] = {"duration": 0.}
-            if sub_timer:
-                self.duration_steps[name]["node"] = SpeedAnalyser()
-                self.duration_steps[name]["node"].start()
+    def stop(self):
+        with self.lock:
+            if self._start_time is not None:
+                elapsed = time.perf_counter() - self._start_time
+                self.total_time += elapsed
+                self._start_time = None
 
-        self.current_timer = time.time()
-        self.current_step_name = name
+    def get_child(self, step_name: str) -> "StepTimer":
+        with self.lock:
+            if step_name not in self.children:
+                self.children[step_name] = StepTimer(step_name, parent=self)
+            return self.children[step_name]
 
-        if sub_timer:
-            return self.duration_steps[name]["node"]
-    def end_step(self):
-        # Handle previous step
-        if self.current_step_name is not None:
-            self.duration_steps[self.current_step_name]["duration"] += (
-                time.time() - self.current_timer
-            )
-            if "node" in self.duration_steps[self.current_step_name]:
-                self.duration_steps[self.current_step_name]["node"].end_step()
-        self.current_step_name = None
+    def __repr__(self):
+        return f"<StepTimer(name={self.name}, count={self.count}, total={self.total_time:.4f}s)>"
 
-    def __recursive_print(self, level =0):
-        elapsed_time = sum(
-            [value["duration"] for value in self.duration_steps.values()]
-        )
-        for step_name, values in self.duration_steps.items():
-            print(
-                "".join(["  " for _ in range(level+1)]),
-                step_name,
-                f"{values['duration']:0.2f}s",
-                f"({100*values['duration']/elapsed_time:0.2f})%" if elapsed_time > 0 else "0.00%"
-            )
-            if "node" in values:
-                values["node"].__recursive_print(level= level+1)
+
+class SpeedAnalyser:
+    """
+    Manages a root StepTimer and prints hierarchical timing results.
+    """
+    def __init__(self, root_name="ROOT", print_threshold=0.01):
+        self.root = StepTimer(root_name)
+        self.print_threshold = print_threshold
+        self._root_token = None
+        self.running = False
+
+    def start(self):
+        """
+        Begin timing the root step and set it as the active step in context.
+        """
+        self.running = True
+        self._root_token = current_step_var.set(self.root)
+        self.root.start()
 
     def end(self):
-        self.end_step()
+        """
+        Stop timing the root step, restore prior context, then print a report.
+        """
+        self.running = False
+        self.root.stop()
+        if self._root_token is not None:
+            current_step_var.reset(self._root_token)
+        self._print_report()
 
-        # Print
-        elapsed_time = sum(
-            [value["duration"] for value in self.duration_steps.values()]
-        )
-        print(f"Total Elapsed : {elapsed_time:0.2}s")
-        self.__recursive_print()
-        # Reset
-        self.reset()
+    def _print_report(self):
+        total = self.root.total_time
+        print("\nPerformance Report")
+        print("==================")
+        self._print_step(self.root, total, level=0)
+
+    def _print_step(self, step: StepTimer, total: float, level: int):
+        fraction = (step.total_time / total) if total > 0 else 0
+        if fraction < self.print_threshold and step.parent is not None:
+            # skip printing steps under the threshold (except the root)
+            return
+
+        indent = "  " * level
+        pct_str = f"({fraction*100:5.2f}%)"
+        print(f"{indent}- {step.name}: {step.total_time:.4f}s "
+              f"[count={step.count}] {pct_str}")
+
+        for child in step.children.values():
+            self._print_step(child, total, level=level + 1)
+
+
+def astep_timer(step_name: str, level: int = 0):
+    """
+    Decorator to measure an async function's performance under a named step,
+    optionally tagged with a 'level'.
     
-    # def __recursive_print(self, tree : dict, level = 0):
-    #     for step_name, values in tree.items():
-    #         print("".join(["  " for _ in range(level+1)]), step_name, f" - {values['duration']} ({values['duration_percent']})")
-    #         if values["node"] is not None:
-    #             self.__recursive_print(tree = values["node"], level= +1)
+    Usage:
+        @astep_time(step_name="fetch_user_data", level=1)
+        async def some_async_func(...):
+            ...
+    """
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            parent_step = current_step_var.get()
+            # If we are not inside a SpeedAnalyser context, just run the function.
+            if parent_step is None:
+                return await func(*args, **kwargs)
+
+            # Create or get a child step, optionally including the level in the name.
+            # e.g. you might store level in the step name or ignore it in the name if you prefer.
+            decorated_step_name = f"{step_name} [lvl={level}]"
+            child_step = parent_step.get_child(decorated_step_name)
+
+            token = current_step_var.set(child_step)
+            child_step.start()
+            try:
+                return await func(*args, **kwargs)
+            finally:
+                child_step.stop()
+                # revert context
+                current_step_var.reset(token)
+        return wrapper
+    return decorator

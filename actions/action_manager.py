@@ -5,6 +5,7 @@ from gymnasium.spaces import Space
 from datetime import datetime
 
 from ..element import AbstractEnvironmentElement
+from ..utils.speed_analyser import astep_timer
 
 ActType = TypeVar("ActType")
 
@@ -12,6 +13,10 @@ class AbstractActionManager(AbstractEnvironmentElement, ABC):
     def __init__(self) -> None:
         super().__init__()
         self.action_history = {}
+
+    @astep_timer(step_name="Execute")
+    async def __execute__(self, action : ActType) -> None:
+        return await self.execute(action= action)
 
     async def reset(self, seed = None):
         self.time_manager = self.get_trading_env().time_manager

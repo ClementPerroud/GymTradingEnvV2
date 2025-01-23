@@ -14,6 +14,7 @@ from ..actions  import AbstractActionManager
 from ..observers  import AbstractObserver
 from ..enders import AbstractEnder, CompositeEnder, ender_deep_search
 from ..renderers import AbstractRenderer
+from ..utils.speed_analyser import SpeedAnalyser, astep_timer
 
 class RLTradingEnv(AbstractTradingEnv):
     instances = {}
@@ -37,35 +38,39 @@ class RLTradingEnv(AbstractTradingEnv):
 
         self.action_space = self.action_manager.action_space()
         self.observation_space = self.observer.observation_space()
+
+        self.speed_analyser = SpeedAnalyser()
+
     
 
     async def reset(self, seed = None, **kwargs):
         self.__step = 0
         await super().__reset__(seed = seed, **kwargs)
-        obs = await self.observer.get_obs()
+        obs = await self.observer.__get_obs__()
         return obs, {}
 
     async def step(self, action : Any):
         # At t : execute action
-        await self.action_manager.execute(action = action)
+        await self.action_manager.__execute__(action = action)
 
         # Going from t to t+1
         await super().__step__()
         self.__step += 1
 
         # At t+1 : Perform checks, get observations, get rewards
-        obs = await self.observer.get_obs()
-        reward = await self.rewarder.get()
+        obs = await self.observer.__get_obs__()
+        reward = await self.rewarder.__get__()
         infos = {"date": await self.time_manager.get_current_datetime()}
 
         ## Perform ender checks with CompositeEnder
-        terminated, truncated, trainable = await self.check()
+        terminated, truncated, trainable = await self.__check__()
 
         ## Trigger renderers
         await self.__renderers(action, obs, reward, terminated, truncated, trainable, infos)
 
         return obs, reward, terminated, truncated, trainable, infos
 
+    @astep_timer("Renderers")
     async def __renderers(self, action, obs, reward, terminated, truncated, trainable, infos):
         render_steps, render_episode = [], []
         for renderer in self.renderers: 

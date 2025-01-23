@@ -1,20 +1,23 @@
-def class_deep_search(condition, element : object, list_to_fill, visited, excluded, excluded_classes, level = 0):
+def class_deep_search(condition, element : object, visited = None, result = None):
+    if result is None: result = set([])
+    if visited is None: visited = set([])
+    
     element_id = id(element)
 
     if element_id in visited:
-        return list_to_fill
+        return result
 
-    visited.append(element_id)
+    visited.add(element_id)
 
-    if  element_id in excluded or isinstance(element, excluded_classes):
-        if level > 0: return list_to_fill
+    # if element_id in excluded or isinstance(element, excluded_classes):
+    #     if level > 0: return result
 
-    elif condition(element):
-        list_to_fill.append(element)
+    if condition(element):
+        result.add(element)
     
     for child_element in get_iterator(element=element):
-        class_deep_search(condition= condition, element= child_element, list_to_fill= list_to_fill, visited= visited, excluded = excluded, excluded_classes= excluded_classes, level= level + 1)
-    return list_to_fill
+        class_deep_search(condition= condition, element= child_element, result= result, visited= visited)
+    return result
 
 import numbers
 import numpy as np

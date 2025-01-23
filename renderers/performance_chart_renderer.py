@@ -80,27 +80,27 @@ class PerformanceChartRenderer(AbstractRenderer):
         sharpe_ratio = np.mean(all_returns) / (np.std(all_returns) + 1E-6)
         sharpe_ratio *= (timedelta(days = 365.25) / mean_interval)**(0.5)
 
-        # Display of graphs
-        fig, ax = plt.subplots(1, 1, figsize = (6, 1.5), dpi =300)
+        # # Display of graphs
+        # fig, ax = plt.subplots(1, 1, figsize = (6, 1.5), dpi =300)
         
-        # Plot Portfolio Valuation
-        ax.tick_params(axis='both', labelsize=5)
-        ax.plot(
-            dates,valuations,
-            color = "navy", linewidth = 0.7, label = "Portfolio Valuation"
-        )
+        # # Plot Portfolio Valuation
+        # ax.tick_params(axis='both', labelsize=5)
+        # ax.plot(
+        #     dates,valuations,
+        #     color = "navy", linewidth = 0.7, label = "Portfolio Valuation"
+        # )
 
-        for pair in self.pairs:
-            ax.plot(
-                dates,
-                np.array(pair_prices[pair])*valuations[0]/pair_prices[pair][0],
-                linewidth = 0.7, label = f"Price of {pair}"
-            )
-        ax.set_yscale("log")
-        ax.set_title(self.title)
-        ax.grid(color='lightgray', linestyle='--', linewidth=0.5)
-        fig.legend(loc = "lower center", fontsize = 6)
-        plt.show()
+        # for pair in self.pairs:
+        #     ax.plot(
+        #         dates,
+        #         np.array(pair_prices[pair])*valuations[0]/pair_prices[pair][0],
+        #         linewidth = 0.7, label = f"Price of {pair}"
+        #     )
+        # ax.set_yscale("log")
+        # ax.set_title(self.title)
+        # ax.grid(color='lightgray', linestyle='--', linewidth=0.5)
+        # fig.legend(loc = "lower center", fontsize = 6)
+        # plt.show()
 
         print(
             color.BOLD,
@@ -109,7 +109,6 @@ class PerformanceChartRenderer(AbstractRenderer):
             *[f"Annualized {pair} Return : {100*annualized_market_returns[pair]:0.2f}%\t" for pair in self.pairs],
             end= color.END + "\n"
         )
-        self.memory.clear()
 
 
 class color:

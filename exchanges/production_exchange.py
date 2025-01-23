@@ -5,13 +5,13 @@ import numpy as np
 import pytz
 from copy import deepcopy
 from functools import lru_cache
-from async_lru import alru_cache
 from typing import List
 from binance import AsyncClient
 
 from ..core import Asset, Pair, Quotation, Portfolio, Value
 from ..simulations.simulation import AbstractPairSimulation
 from ..time_managers import AbstractTimeManager
+from ..utils.async_lru import alru_cache
 
 from .responses import OrderResponse, TickerResponse
 from .exceptions import PairNotFound
@@ -33,7 +33,7 @@ class BinanceProductionExchange(AbstractExchange):
         self.time_manager = self.get_trading_env().time_manager
         self.get_info.cache_clear()
     
-    @alru_cache(maxsize=1)
+    # @alru_cache(maxsize=1)
     async def get_info(self):
         info = await self.client.get_exchange_info()
         self.__symbol_infos = {}

@@ -19,6 +19,7 @@ class AbstractTradingEnv(gym.Env, CompositeEnder, ABC):
         self.exchange_manager = exchange_manager
 
         self.initial_enders = enders
+        self.set_trading_env(self)
         super().__init__()
 
     @abstractmethod
@@ -29,8 +30,8 @@ class AbstractTradingEnv(gym.Env, CompositeEnder, ABC):
         self.env_elements, self.enders = [], []
 
         # Get all the environment elements
-        env_elements : List[AbstractEnvironmentElement] = element_deep_search(self, excluded_classes= [AbstractTradingEnv])
-
+        env_elements : list[AbstractEnvironmentElement] = element_deep_search(self)
+        env_elements.remove(self)
         # Sort the environment elements by order_index
         order_indexes = np.argsort([elem.order_index for elem in env_elements])
         self.env_elements = [env_elements[i] for i in order_indexes]
@@ -40,6 +41,7 @@ class AbstractTradingEnv(gym.Env, CompositeEnder, ABC):
         
         # Prepare the environment elements and retrieve the warmup steps needed
         warm_steps_needed = 0
+        
         for element in self.env_elements:
             element.set_trading_env(self)
             warm_steps_needed = max(warm_steps_needed, element.simulation_warmup_steps)
@@ -52,7 +54,7 @@ class AbstractTradingEnv(gym.Env, CompositeEnder, ABC):
         if self.mode.value == Mode.SIMULATION.value:
             for i in range(warm_steps_needed + 1):
                 await self.__step__()
-                terminated, truncated, trainable = await self.check()
+                terminated, truncated, trainable = await self.__check__()
                 if terminated or truncated: raise ValueError("Your environment has been terminated or truncated during initialization.")
 
 
