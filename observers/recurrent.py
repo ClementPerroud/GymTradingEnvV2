@@ -6,6 +6,7 @@ from gymnasium.spaces import Space, Box
 from collections import OrderedDict
 
 from ..time_managers import AbstractTimeManager
+from ..utils.speed_analyser import astep_timer
 from .observer import AbstractObserver
 
 
@@ -73,37 +74,49 @@ class RecurrentObserver(AbstractObserver):
             for _ in range(to_remove):
                 # popitem(last=False) pops the *oldest inserted* item
                 self.memory.popitem(last=False)
-
-    async def get_obs(self, date: datetime = None) -> np.ndarray:
+    @astep_timer(step_name="Get Obs Recurrent")
+    async def get_obs(self, date: datetime = None, current_step = None) -> np.ndarray:
         """
         Return a stacked array of shape (window, sub_observer_obs_shape),
         representing the last window timesteps from sub_observer.
         The earliest time is at index [0], the most recent at index [-1].
         """
+        if current_step is not None: current_step = current_step.step("Get Current Date")
         if date is None:
             date = await self.time_manager.get_current_datetime()
 
         # For a "window" W, we want timesteps [W-1, W-2, ..., 0] steps back
         steps_back = range(self.window - 1, -1, -1)
 
+        if current_step is not None: current_step = current_step.step("Get Historical Date 1 ")
 
         # 1) Compute all relevant historical dates in parallel
-        tasks = [self.time_manager.get_historical_datetime(step_back=s, relative_date=date) for s in steps_back]
-        window_dates = await asyncio.gather(*tasks)
+        if current_step is not None: current_step = current_step.step("Get Historical Date 2 ")
+
+        # tasks = [self.time_manager.get_historical_datetime(step_back=s, relative_date=date) for s in steps_back]
+        # window_dates = await self.gather(*tasks)
+
+        window_dates = []
+        for s in steps_back:
+            window_dates.append(await self.time_manager.get_historical_datetime(step_back=s, relative_date=date))
+
+        if current_step is not None: current_step = current_step.step("Get Historical Date 3 ")
+
 
         # 2) Identify which of those dates we have not cached
         missing_dates = [d for d in window_dates if d not in self.memory]
 
+        if current_step is not None: current_step = current_step.step("Get Missing Obs")
+
         # 3) Fetch new observations from the sub_observer for missing dates
         if missing_dates:
             sub_tasks = [self.sub_observer.__get_obs__(date=d) for d in missing_dates]
-            new_obs = await asyncio.gather(*sub_tasks)
+            new_obs = await self.gather(*sub_tasks)
             # Merge new observations into memory
-            i = 0
-            for d, obs in zip(missing_dates, new_obs):
-                self.memory[d] = obs
-                i += 1
+            for d, obs in zip(missing_dates, new_obs): self.memory[d] = obs
 
+        if current_step is not None:
+            current_step = current_step.step("Build Result")
         # 4) Build result in ascending chronological order
         #    (Because steps_back started from farthest in the past -> to present)
         results = [self.memory[d] for d in window_dates]
@@ -113,3 +126,4 @@ class RecurrentObserver(AbstractObserver):
 
         # 6) Return as a numpy array of shape (window, ...)
         return np.array(results)
+        # return [np.array(results)

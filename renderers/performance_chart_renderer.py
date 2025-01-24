@@ -28,7 +28,7 @@ class PerformanceChartRenderer(AbstractRenderer):
     async def render_step(self, action, next_obs, reward, terminated, truncated, trainable, infos):
         date = await self.time_manager.get_current_datetime()
         portfolio = await self.exchange_manager.get_portfolio()
-        results = await asyncio.gather(
+        results = await self.gather(
             self.portfolio_manager.valuation(portfolio= portfolio, date= date),
             self.portfolio_manager.exposition(portfolio= portfolio, date= date),
             *[self.exchange_manager.get_ticker(pair= pair) for pair in self.pairs],

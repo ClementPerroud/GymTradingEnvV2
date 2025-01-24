@@ -112,7 +112,7 @@ class ExchangeManager(AbstractExchange):
             list_order_responses.append(order_response)
         return list_order_responses
     
-    async def get_quotation(self, pair : Pair, date : datetime = None):
+    async def get_quotation(self, pair : Pair, date : datetime):
         if date is None: date = await self.time_manager.get_current_datetime()
         return await self.__lru_get_quotation(pair = pair, date = date)
     
@@ -128,7 +128,8 @@ class ExchangeManager(AbstractExchange):
             quotation_tasks.append(
                 self.exchange.get_quotation(pair = intermediate_pair, date= date)
             )
-        quotations = await asyncio.gather(*quotation_tasks)
+            
+        quotations = await self.gather(*quotation_tasks)
 
         cumulative_quotation = 1
         for quotation in quotations:

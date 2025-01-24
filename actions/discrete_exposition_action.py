@@ -34,7 +34,7 @@ class DiscreteExpositionAction(AbstractAction):
     async def execute(self):
         current_position = await self.exchange_manager.get_portfolio()
         date = await self.time_manager.get_current_datetime()
-        total_valuation, current_exposition = await asyncio.gather(
+        total_valuation, current_exposition = await self.gather(
             self.portfolio_manager.valuation(
                 portfolio= current_position,
                 date= date
@@ -79,7 +79,7 @@ class DiscreteExpositionAction(AbstractAction):
                     asset_to_increase = position_to_increase.asset   
                 )
             )
-        return await asyncio.gather(*order_tasks)
+        return await self.gather(*order_tasks)
 
                 
                 

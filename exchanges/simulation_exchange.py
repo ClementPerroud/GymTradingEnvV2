@@ -50,9 +50,9 @@ class SimulationExchange(AbstractExchange):
     async def get_available_pairs(self) -> List[Pair]: 
         return list(self.pair_simulations.keys())
     
-    @astep_timer("Get Ticker", level= 2)
+    @astep_timer("Get Ticker")
     @alru_cache(maxsize= 1_000)
-    async def get_ticker(self, pair : Pair, date : datetime) -> TickerResponse:
+    async def get_ticker(self, pair : Pair, date : datetime, **kwargs) -> TickerResponse:
         if pair not in self.pair_simulations : raise PairNotFound(pair= pair)
         if date is None:date = await self.time_manager.get_current_datetime()
 

@@ -54,9 +54,9 @@ class ArrayConcatenateObserver(AbstractObserver):
         
         for sub_observer in self.sub_observers:
             tasks.append(sub_observer.__get_obs__(date = date))
-        results = await asyncio.gather(*tasks)
+        results = await self.gather(*tasks)
         
         for i in range(len(results)):
             results[i] = np.array(results[i])
-        return np.concatenate(results, axis = self.axis).tolist()
+        return np.concatenate(results, axis = self.axis)
     

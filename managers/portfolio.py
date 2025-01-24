@@ -33,17 +33,17 @@ class PortfolioManager(AbstractEnvironmentElement):
     async def reset(self, seed = None):
         self.exchange_manager = self.get_trading_env().exchange_manager
 
-    # @alru_cache(maxsize=128)
+    @alru_cache(maxsize=128)
     async def __valuations(self, portfolio : Portfolio, date : datetime) -> Dict[Asset, Value]:
         assets, valuation_tasks = [], []
         for position in portfolio.get_positions():
             assets.append(position.asset)
             valuation_tasks.append(self.position_manager.valuation(position = position, date= date))
-        valuations = await asyncio.gather(*valuation_tasks)
+        valuations = await self.gather(*valuation_tasks)
         return dict(zip(assets, valuations))
     
-    @astep_timer("Valuation", level=1)
-    async def valuation(self, portfolio : Portfolio, date : datetime, valuations : Dict[Asset, Value] = None) -> Value:
+    @astep_timer("Valuation")
+    async def valuation(self, portfolio : Portfolio, date : datetime, valuations : Dict[Asset, Value] = None, **kwargs) -> Value:
         if valuations is None: valuations = await self.__valuations(portfolio = portfolio, date= date)
         _sum = Value(Decimal('0'), self.position_manager.quote_asset)
         for value in valuations.values():

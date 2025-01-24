@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import List, TYPE_CHECKING
 from enum import Enum
+import asyncio
 
 from .utils.class_searcher import class_deep_search
 from .utils.speed_analyser import astep_timer
@@ -42,18 +43,26 @@ class AbstractEnvironmentElement(ABC):
         return 0
 
     @astep_timer(step_name="Reset")
-    async def __reset__(self, seed = None):
+    async def __reset__(self, seed = None, **kwargs):
         return await self.reset(seed= seed)
     
     async def reset(self, seed = None):
         pass
 
     @astep_timer(step_name="Forward")
-    async def __forward__(self, date : datetime, seed = None):
+    async def __forward__(self, date : datetime, seed = None, **kwargs):
         return await self.forward(date= date, seed= seed)
     
     async def forward(self, date : datetime, seed = None):
         pass
+
+    # Utils
+    async def gather(self, *tasks):
+        if self.get_trading_env().mode == Mode.PRODUCTION:
+            return await asyncio.gather(*tasks)
+        else:
+            return [await task for task in tasks]
+        return self.__class__.__name__
 
 
 def element_deep_search(element,  excluded_classes = []) -> List[AbstractEnvironmentElement]:

@@ -14,7 +14,7 @@ class CompositeEnder(AbstractEnder):
         for ender in self.enders:
             if id(ender) is not id(self): # To avoid recursive call which would lead to an infinite loop
                 ender_tasks.append(ender.check())
-        ender_results = await asyncio.gather(*ender_tasks)
+        ender_results = await self.gather(*ender_tasks)
 
         for ender_result in ender_results:
             ender_terminated, ender_truncated, ender_trainable = ender_result

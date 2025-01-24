@@ -71,16 +71,16 @@ class RLTradingEnv(AbstractTradingEnv):
         return obs, reward, terminated, truncated, trainable, infos
 
     @astep_timer("Renderers")
-    async def __renderers(self, action, obs, reward, terminated, truncated, trainable, infos):
+    async def __renderers(self, action, obs, reward, terminated, truncated, trainable, infos, **kwargs):
         render_steps, render_episode = [], []
         for renderer in self.renderers: 
             render_steps.append(renderer.render_step(action, obs, reward, terminated, truncated, trainable, infos))
             if terminated or truncated:
                 render_episode.append(renderer.render_episode())
         # First : steps
-        await asyncio.gather(*render_steps)
+        await self.gather(*render_steps)
         # Secondly : episode 
-        await asyncio.gather(*render_episode)
+        await self.gather(*render_episode)
     
 
     

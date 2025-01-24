@@ -43,7 +43,7 @@ class ComputedDifferentialSharpeRatioRewarder(AbstractRewarder, AbstractEnder):
     # Called after forward
     async def compute_reward(self):
         # Compute requirements
-        current_portfolio, current_datetime = await asyncio.gather(
+        current_portfolio, current_datetime = await self.gather(
             self.exchange_manager.get_portfolio(),
             self.time_manager.get_current_datetime() 
         )
@@ -119,7 +119,7 @@ class MoodyDifferentialSharpeRatioRewarder(AbstractRewarder, AbstractEnder):
     # Called after forward
     async def compute_reward(self):
         # Compute requirements
-        current_portfolio, current_datetime = await asyncio.gather(
+        current_portfolio, current_datetime = await self.gather(
             self.exchange_manager.get_portfolio(),
             self.time_manager.get_current_datetime() 
         )
