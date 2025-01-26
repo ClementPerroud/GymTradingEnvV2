@@ -46,15 +46,9 @@ class ExchangeManager(AbstractExchange):
         return await self.exchange.get_available_pairs()
     
 
-    async def get_ticker(self, pair : Pair, date : datetime = None) -> TickerResponse:
+    async def get_ticker(self, pair : Pair, date : datetime) -> TickerResponse:
         """Use lru_cache to avoid sending twice the same requests."""
-        if date is None: date = await self.time_manager.get_current_datetime()
-        return await self.__lru_get_ticker(pair= pair, date= date)
-    
-    # @alru_cache(maxsize = 1_000)
-    async def __lru_get_ticker(self, pair : Pair, date : datetime) -> TickerResponse:
         return await self.exchange.get_ticker(pair= pair, date= date)
-
 
 
     async def get_portfolio(self) -> Portfolio:
@@ -113,7 +107,6 @@ class ExchangeManager(AbstractExchange):
         return list_order_responses
     
     async def get_quotation(self, pair : Pair, date : datetime):
-        if date is None: date = await self.time_manager.get_current_datetime()
         return await self.__lru_get_quotation(pair = pair, date = date)
     
     # @alru_cache(maxsize=1_000)

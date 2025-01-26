@@ -1,5 +1,6 @@
 from datetime import datetime,timedelta
 import asyncio
+import pytz
 import matplotlib.pyplot as plt
 from typing import List
 from collections import deque
@@ -31,7 +32,7 @@ class PerformanceChartRenderer(AbstractRenderer):
         results = await self.gather(
             self.portfolio_manager.valuation(portfolio= portfolio, date= date),
             self.portfolio_manager.exposition(portfolio= portfolio, date= date),
-            *[self.exchange_manager.get_ticker(pair= pair) for pair in self.pairs],
+            *[self.exchange_manager.get_ticker(pair= pair, date=date) for pair in self.pairs],
         )
         portfolio_valuation, portfolio_exposition = results[0], results[1]
         ticker_dict : List[TickerResponse] = dict(zip(self.pairs, results[2:]))
@@ -40,6 +41,8 @@ class PerformanceChartRenderer(AbstractRenderer):
             "portfolio_valuation" : float(portfolio_valuation.amount),
             "reward" : reward,
             "trainable" : trainable,
+            "action" : action,
+            "portfolio" : portfolio,
             **{f"price_{pair}" : float(ticker_dict[pair].close.amount) for pair in self.pairs}
         })
 
@@ -47,12 +50,13 @@ class PerformanceChartRenderer(AbstractRenderer):
         if len(self.memory) <= 1: return
 
         # Extracting data from memory deque
-        dates, valuations, rewards = [], [], []
+        dates, valuations, rewards, actions = [], [], [], []
         pair_prices = {pair : [] for pair in self.pairs}
         for index, elem in enumerate(self.memory):
             # if index < 1500 or index > 1700: continue
             dates.append(elem["date"])
             valuations.append(elem["portfolio_valuation"])
+            actions.append(elem["action"])
             rewards.append(elem["reward"] if elem["trainable"] else 0)
             for pair in self.pairs:
                 pair_prices[pair].append(elem[f"price_{pair}"])
@@ -101,12 +105,18 @@ class PerformanceChartRenderer(AbstractRenderer):
         # ax.grid(color='lightgray', linestyle='--', linewidth=0.5)
         # fig.legend(loc = "lower center", fontsize = 6)
         # plt.show()
-
+        
         print(
             color.BOLD,
-            f"Sharpe Ratio : {sharpe_ratio:0.2f}\t",
-            f"Annualized Portfolio Return : {100*annualized_portfolio_return:0.2f}%\t",
-            *[f"Annualized {pair} Return : {100*annualized_market_returns[pair]:0.2f}%\t" for pair in self.pairs],
+            # f"Sharpe Ratio : {sharpe_ratio:0.2f}\t",
+            # f"Annualized Portfolio Return : {100*annualized_portfolio_return:0.2f}%\t",
+            # *[f"Annualized {pair} Return : {100*annualized_market_returns[pair]:0.2f}%\t" for pair in self.pairs],
+            f"Valuation[-2] : {valuations[-2]:0.2f} {self.quote_asset}\t",
+            f"Valuation[-1] : {valuations[-1]:0.2f} {self.quote_asset}\t",
+            *[f"Price[-2] : {pair_prices[pair][-2]:0.2f} {pair}\t" for pair in self.pairs],
+            *[f"Price[-1] : {pair_prices[pair][-1]:0.2f} {pair}\t" for pair in self.pairs],
+            f"Date[-2] : {dates[-2]}\t",
+            f"Date[-1] : {dates[-1]}\t",
             end= color.END + "\n"
         )
 

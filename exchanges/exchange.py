@@ -20,12 +20,12 @@ class AbstractExchange(AbstractEnvironmentElement, ABC):
         ...
     
     @abstractmethod
-    async def get_ticker(self, pair : Pair, date : datetime = None) -> TickerResponse:
+    async def get_ticker(self, pair : Pair, date) -> TickerResponse:
         ...
 
     @astep_timer("Quotation")
     @alru_cache(maxsize=1_000)
-    async def get_quotation(self, pair : Pair, date : datetime = None) -> Quotation:
+    async def get_quotation(self, pair : Pair, date) -> Quotation:
         try:
             return (await self.get_ticker(pair = pair, date= date)).price
         except PairNotFound as e:

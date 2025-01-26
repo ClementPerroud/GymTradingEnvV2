@@ -54,7 +54,6 @@ class SimulationExchange(AbstractExchange):
     @alru_cache(maxsize= 1_000)
     async def get_ticker(self, pair : Pair, date : datetime, **kwargs) -> TickerResponse:
         if pair not in self.pair_simulations : raise PairNotFound(pair= pair)
-        if date is None:date = await self.time_manager.get_current_datetime()
 
         data = self.pair_simulations[pair].get_data(date = date)
         return TickerResponse(
@@ -77,6 +76,7 @@ class SimulationExchange(AbstractExchange):
             pair : Pair, 
             quantity : Value
         ) -> OrderResponse:
+
         """Perform a order in the simulation
 
         Args:
@@ -95,13 +95,15 @@ class SimulationExchange(AbstractExchange):
         Returns:
             _type_: _description_
         """
+        date = await self.time_manager.get_current_datetime()
+
         if quantity.asset == pair.quote_asset:
             return await self.market_order(pair = pair.reverse(), quantity= quantity)
         if quantity.asset != pair.asset:
             raise ValueError(f"quantity.quote_asset {quantity.asset} must match either pair.asset {pair.asset} or pair.quote_asset {pair.quote_asset}")
         
         # We made sur that quantity unit : asset
-        price = await self.get_quotation(pair = pair) # unit : asset / quote_asset
+        price = await self.get_quotation(pair = pair, date = date) # unit : asset / quote_asset
     
         quantity_asset = quantity # unit : asset
         quantity_counterpart= quantity * price # unit : (asset) * (counterpart/ asset) = asset

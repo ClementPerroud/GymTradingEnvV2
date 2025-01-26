@@ -23,7 +23,12 @@ class DiscreteExpositionAction(AbstractAction):
         if asset_to_decrease == quote_asset:
                 quantity_asset = - quantity_quote_asset
         else:
-            quantity_asset = - quantity_quote_asset * (await self.exchange_manager.get_quotation(pair = Pair(asset_to_decrease, quote_asset= quote_asset))).reverse()
+            quantity_asset = - quantity_quote_asset * (
+                await self.exchange_manager.get_quotation(
+                    pair = Pair(asset_to_decrease, quote_asset= quote_asset),
+                    date = await self.time_manager.get_current_datetime()
+                )
+            ).reverse()
 
         pair = Pair(asset= asset_to_increase, quote_asset= asset_to_decrease)
         await self.exchange_manager.market_order(
