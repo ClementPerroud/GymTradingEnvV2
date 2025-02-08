@@ -59,17 +59,21 @@ class RLTradingEnv(AbstractTradingEnv):
 
         # At t+1 : Perform checks, get observations, get rewards
         obs = await self.observer.__get_obs__()
-        infos = {"date": await self.time_manager.get_current_datetime()}
 
         ## Perform ender checks with CompositeEnder
         terminated, truncated, trainable = await self.__check__()
 
+
         reward = 0
         if not terminated: reward = await self.rewarder.__get__()
         ## Trigger renderers
+        infos = {
+            "date": await self.time_manager.get_current_datetime(),
+            "trainable" : trainable,
+        }
         await self.__renderers(action, obs, reward, terminated, truncated, trainable, infos)
 
-        return obs, reward, terminated, truncated, trainable, infos
+        return obs, reward, terminated, truncated, infos
 
     @astep_timer("Renderers")
     async def __renderers(self, action, obs, reward, terminated, truncated, trainable, infos, **kwargs):

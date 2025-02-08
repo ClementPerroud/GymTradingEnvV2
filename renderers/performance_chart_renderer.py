@@ -14,12 +14,13 @@ from ..utils.speed_analyser import SpeedAnalyser
 text_kwargs = dict(ha='center', va='center', fontsize=28, color='C1')
 
 class PerformanceChartRenderer(AbstractRenderer):
-    def __init__(self, pairs, quote_asset, title = "Performance Chart") -> None:
+    def __init__(self, pairs, quote_asset, title = "Performance Chart", plot = False) -> None:
         super().__init__()
         self.quote_asset = quote_asset
         self.pairs = pairs
         self.portfolio_manager = PortfolioManager(quote_asset= self.quote_asset)
         self.title = title
+        self.plot = plot
 
     async def reset(self, seed = None):
         self.exchange_manager = self.get_trading_env().exchange_manager
@@ -39,6 +40,7 @@ class PerformanceChartRenderer(AbstractRenderer):
         self.memory.append({
             "date": date,
             "portfolio_valuation" : float(portfolio_valuation.amount),
+            "portfolio_valuation_asset" : portfolio_valuation.asset.name,
             "reward" : reward,
             "trainable" : trainable,
             "action" : action,
@@ -60,7 +62,7 @@ class PerformanceChartRenderer(AbstractRenderer):
             rewards.append(elem["reward"] if elem["trainable"] else 0)
             for pair in self.pairs:
                 pair_prices[pair].append(elem[f"price_{pair}"])
-        
+        valuation_asset = self.memory[-1]["portfolio_valuation_asset"]
 
         valuations = np.array(valuations)
 
@@ -70,7 +72,7 @@ class PerformanceChartRenderer(AbstractRenderer):
         mean_interval = (elapsed_time / (len(dates)-1) )
 
         # Portfolio Return 
-        portfolio_return = (valuations[-1] - valuations[0]) / (valuations[0])
+        portfolio_return = (max(valuations[-1],0) - valuations[0]) / (valuations[0])
         annualized_portfolio_return = (1+portfolio_return) ** (timedelta(days=365.25) / elapsed_time) - 1
         
         # Market Returns
@@ -84,39 +86,35 @@ class PerformanceChartRenderer(AbstractRenderer):
         sharpe_ratio = np.mean(all_returns) / (np.std(all_returns) + 1E-6)
         sharpe_ratio *= (timedelta(days = 365.25) / mean_interval)**(0.5)
 
-        # # Display of graphs
-        # fig, ax = plt.subplots(1, 1, figsize = (6, 1.5), dpi =300)
-        
-        # # Plot Portfolio Valuation
-        # ax.tick_params(axis='both', labelsize=5)
-        # ax.plot(
-        #     dates,valuations,
-        #     color = "navy", linewidth = 0.7, label = "Portfolio Valuation"
-        # )
+        if self.plot:
+            # Display of graphs
+            fig, ax = plt.subplots(1, 1, figsize = (6, 1.5), dpi =300)
+            
+            # Plot Portfolio Valuation
+            ax.tick_params(axis='both', labelsize=5)
+            ax.plot(
+                dates,valuations,
+                color = "navy", linewidth = 0.7, label = "Portfolio Valuation"
+            )
 
-        # for pair in self.pairs:
-        #     ax.plot(
-        #         dates,
-        #         np.array(pair_prices[pair])*valuations[0]/pair_prices[pair][0],
-        #         linewidth = 0.7, label = f"Price of {pair}"
-        #     )
-        # ax.set_yscale("log")
-        # ax.set_title(self.title)
-        # ax.grid(color='lightgray', linestyle='--', linewidth=0.5)
-        # fig.legend(loc = "lower center", fontsize = 6)
-        # plt.show()
+            for pair in self.pairs:
+                ax.plot(
+                    dates,
+                    np.array(pair_prices[pair])*valuations[0]/pair_prices[pair][0],
+                    linewidth = 0.7, label = f"Price of {pair}"
+                )
+            ax.set_yscale("log")
+            ax.set_title(self.title)
+            ax.grid(color='lightgray', linestyle='--', linewidth=0.5)
+            fig.legend(loc = "lower center", fontsize = 6)
+            plt.show()
         
         print(
             color.BOLD,
-            # f"Sharpe Ratio : {sharpe_ratio:0.2f}\t",
-            # f"Annualized Portfolio Return : {100*annualized_portfolio_return:0.2f}%\t",
-            # *[f"Annualized {pair} Return : {100*annualized_market_returns[pair]:0.2f}%\t" for pair in self.pairs],
-            f"Valuation[-2] : {valuations[-2]:0.2f} {self.quote_asset}\t",
-            f"Valuation[-1] : {valuations[-1]:0.2f} {self.quote_asset}\t",
-            *[f"Price[-2] : {pair_prices[pair][-2]:0.2f} {pair}\t" for pair in self.pairs],
-            *[f"Price[-1] : {pair_prices[pair][-1]:0.2f} {pair}\t" for pair in self.pairs],
-            f"Date[-2] : {dates[-2]}\t",
-            f"Date[-1] : {dates[-1]}\t",
+            f"Valuation : {valuations[-1]:0.2f} {valuation_asset}\t",
+            f"Sharpe Ratio : {sharpe_ratio:0.2f}\t",
+            f"Annualized Portfolio Return : {100*annualized_portfolio_return:0.2f}%\t",
+            *[f"Annualized {pair} Return : {100*annualized_market_returns[pair]:0.2f}%\t" for pair in self.pairs],
             end= color.END + "\n"
         )
 
