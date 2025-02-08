@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import asyncio
 from datetime import datetime, timedelta
-from gymnasium.spaces import Space, Box
+from gymnasium.spaces import Space, Box, Sequence
 from collections import OrderedDict
 
 from ..time_managers import AbstractTimeManager
@@ -17,7 +17,7 @@ class RecurrentObserver(AbstractObserver):
     it queries the sub_observer for the last 'window' timesteps.
     """
 
-    def __init__(self, sub_observer: AbstractObserver, window: int) -> None:
+    def __init__(self, sub_observer: AbstractObserver, window: int, **kwargs) -> None:
         """
         Parameters
         ----------
@@ -26,7 +26,7 @@ class RecurrentObserver(AbstractObserver):
         window : int
             How many timesteps to look back when forming an observation.
         """
-        super().__init__()
+        super().__init__(**kwargs)
         self.sub_observer = sub_observer
         self.window = window
 
@@ -55,10 +55,11 @@ class RecurrentObserver(AbstractObserver):
         observation_space is also a Box. Otherwise NotImplemented.
         """
         sub_space = self.sub_observer.observation_space()
-        if isinstance(sub_space, Box):
-            shape = (self.window,) + sub_space.shape
-            # Keep dtype, but set low/high to -∞/+∞ by default.
-            return Box(low=-np.inf, high=np.inf, shape=shape, dtype=sub_space.dtype)
+        return Sequence(space= sub_space)
+        # if isinstance(sub_space, Box):
+        #     shape = (self.window,) + sub_space.shape
+        #     # Keep dtype, but set low/high to -∞/+∞ by default.
+        #     return Box(low=-np.inf, high=np.inf, shape=shape, dtype=sub_space.dtype)
         return NotImplemented
 
     def __manage_memory(self):
@@ -74,6 +75,7 @@ class RecurrentObserver(AbstractObserver):
             for _ in range(to_remove):
                 # popitem(last=False) pops the *oldest inserted* item
                 self.memory.popitem(last=False)
+
     @astep_timer(step_name="Get Obs Recurrent")
     async def get_obs(self, date: datetime = None, current_step = None) -> np.ndarray:
         """
@@ -125,5 +127,5 @@ class RecurrentObserver(AbstractObserver):
         self.__manage_memory()
 
         # 6) Return as a numpy array of shape (window, ...)
-        return np.array(results)
+        return results
         # return [np.array(results)
