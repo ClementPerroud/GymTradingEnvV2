@@ -14,9 +14,9 @@ class SynchronizeEnv(gym.Env):
     def action_space(self): return self.async_env.action_space
 
     
-    def reset(self, seed = None, **kwargs):
+    def reset(self, seed = None):
         loop = asyncio.get_event_loop()
-        return loop.run_until_complete(self.async_env.reset(seed = seed, **kwargs))
+        return loop.run_until_complete(self.async_env.reset(seed = seed))
 
     def step(self, action):
         loop = asyncio.get_event_loop()
