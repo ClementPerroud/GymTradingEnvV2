@@ -11,28 +11,34 @@ from ..enders import AbstractEnder
 from ..element import Mode
 
 class IntervalTimeManager(AbstractTimeManager, AbstractEnder):
-    def __init__(self, interval : timedelta, offset : timedelta = None, simulation_start_date : datetime = None, simulation_end_date : datetime = None) -> None:
+    def __init__(self, interval : timedelta, base_offset : timedelta = None, simulation_start_date : datetime = None, simulation_end_date : datetime = None) -> None:
         self.interval = interval
-        self.offset = offset if offset is not None else timedelta(0)
+        self.base_offset = base_offset
         self.simulation_start_date = simulation_start_date
         self.simulation_end_date = simulation_end_date
+        self.__current_datetime = self.simulation_start_date
 
-    def set_random_offset(self, base : timedelta):
-        n = int(self.interval/base)
+    def _random_offset(self):
+        if self.base_offset is None: return timedelta(0)
+        n = int(self.interval/self.base_offset)
         i = np.random.randint(low = 0, high= n)
-        self.offset = base * i 
+        return self.base_offset * i 
 
     async def reset(self, seed = None)->None:
         await super().reset(seed= seed)
         self.mode = self.get_trading_env().mode
 
         if self.mode.value == Mode.SIMULATION.value:
-            self.__current_datetime = self.simulation_start_date
+            if await self.get_current_datetime() >= self.simulation_end_date:
+                self.__current_datetime = self.simulation_start_date
+
+
+
             
         elif self.mode.value == Mode.PRODUCTION.value:
             self.__current_datetime = datetime.now(pytz.UTC)
 
-        self.__current_datetime = floor_time(self.__current_datetime, self.interval, self.offset)
+        self.__current_datetime = floor_time(self.__current_datetime, self.interval, self._random_offset())
         
     async def get_current_datetime(self) -> datetime:
         return self.__current_datetime

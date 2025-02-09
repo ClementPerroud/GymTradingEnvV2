@@ -111,6 +111,7 @@ class PerformanceChartRenderer(AbstractRenderer):
         
         print(
             color.BOLD,
+            f"Date : {dates[-1].strftime('%d/%m/%Y %H:%M')}",
             f"Valuation : {valuations[-1]:0.2f} {valuation_asset}\t",
             f"Sharpe Ratio : {sharpe_ratio:0.2f}\t",
             f"Annualized Portfolio Return : {100*annualized_portfolio_return:0.2f}%\t",
