@@ -19,31 +19,40 @@ class AbstractTradingEnv(gym.Env, CompositeEnder, ABC):
         self.exchange_manager = exchange_manager
 
         self.initial_enders = enders
-        self.set_trading_env(self)
+
+        
+
         super().__init__()
+        
+
+    
+    def _prepare_environment_elements(self):
+        # Get all the environment elements
+        self.env_elements : list[AbstractEnvironmentElement] = element_deep_search(self)
+        self.env_elements.remove(self)
+        
+        # Sort the environment elements by order_index
+        order_indexes = np.argsort([elem.order_index for elem in self.env_elements])
+        self.env_elements = [self.env_elements[i] for i in order_indexes]
+
+        for element in self.env_elements:
+            element.set_trading_env(self)
+        self.set_trading_env(self)
+
+        enders = ender_deep_search(self.env_elements) + self.initial_enders
+        self.enders = list(dict.fromkeys(enders)) # Exclude doublons
 
     @abstractmethod
     async def reset(self, seed = None):
         ...
 
     async def __reset__(self, seed = None):
-        self.env_elements, self.enders = [], []
 
-        # Get all the environment elements
-        env_elements : list[AbstractEnvironmentElement] = element_deep_search(self)
-        env_elements.remove(self)
-        # Sort the environment elements by order_index
-        order_indexes = np.argsort([elem.order_index for elem in env_elements])
-        self.env_elements = [env_elements[i] for i in order_indexes]
-
-        enders = ender_deep_search(self.env_elements) + self.initial_enders
-        self.enders = list(dict.fromkeys(enders)) # Exclude doublons
-        
+        self._prepare_environment_elements()
         # Prepare the environment elements and retrieve the warmup steps needed
         warm_steps_needed = 0
         
         for element in self.env_elements:
-            element.set_trading_env(self)
             warm_steps_needed = max(warm_steps_needed, element.simulation_warmup_steps)
         
         # Reset all environment elements.

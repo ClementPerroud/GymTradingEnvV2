@@ -31,9 +31,6 @@ class IntervalTimeManager(AbstractTimeManager, AbstractEnder):
         if self.mode.value == Mode.SIMULATION.value:
             if await self.get_current_datetime() >= self.simulation_end_date:
                 self.__current_datetime = self.simulation_start_date
-
-
-
             
         elif self.mode.value == Mode.PRODUCTION.value:
             self.__current_datetime = datetime.now(pytz.UTC)
