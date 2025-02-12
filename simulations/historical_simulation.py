@@ -128,7 +128,6 @@ class HistoricalSimulation(AbstractPairSimulation, AbstractEnder):
         theoritical_index_gap = (date - self.past_date)/self.main_interval
         if real_index_gap < theoritical_index_gap * 0.8 :
             self.get_trading_env().infos["trainable"] = False
-            print(date, "CATCH", self.pair)
 
 
 
