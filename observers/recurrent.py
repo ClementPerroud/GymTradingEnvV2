@@ -116,11 +116,13 @@ class RecurrentObserver(AbstractObserver):
         if not self.get_trading_env().infos["trainable"]:
             self.get_trading_env().infos["_unique_trainable"] = True # Tell that this step is really not trainable (and not because of the recurrent process)
         for window_date in window_dates:
-            historical_infos = self.get_trading_env().historical_infos[date]
-            if window_date != date and not historical_infos['trainable']:
-                if "_unique_trainable" in historical_infos and historical_infos["_unique_trainable"]: # Check if the step was really not trainable
+            if window_date < date and window_date in self.get_trading_env().historical_infos:
+                historical_infos = self.get_trading_env().historical_infos[window_date]
+                if (
+                        historical_infos['trainable']
+                        and "_unique_trainable" in historical_infos and historical_infos["_unique_trainable"]  # Check if the step was really not trainable
+                    ):
                     self.get_trading_env().infos["trainable"] = False
-
 
         # 5) Remove old entries if memory is too big
         self._manage_memory()
