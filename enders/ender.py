@@ -8,11 +8,11 @@ from ..utils.speed_analyser import astep_timer
 class AbstractEnder(AbstractEnvironmentElement, ABC):
     
     @astep_timer(step_name="Check")
-    async def __check__(self, **kwargs) -> Tuple[bool , bool, bool]:
+    async def __check__(self, **kwargs) -> Tuple[bool , bool]:
         return await self.check()
     
     @abstractmethod
-    async def check(self) -> Tuple[bool , bool, bool]:
+    async def check(self) -> Tuple[bool , bool]:
         """_summary_
 
         Returns:

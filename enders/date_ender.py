@@ -14,11 +14,10 @@ class DateEnder(AbstractEnder):
 
     
     async def check(self) -> Tuple[bool, bool]:
-        trainable = True
         terminated = False
         truncated = False
 
         if await self.time_mangager.get_current_datetime() >= self.end_date:
             truncated = True
 
-        return terminated, truncated, trainable
+        return terminated, truncated

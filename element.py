@@ -42,14 +42,12 @@ class AbstractEnvironmentElement(ABC):
     def order_index(self):
         return 0
 
-    @astep_timer(step_name="Reset")
     async def __reset__(self, seed = None, **kwargs):
         return await self.reset(seed= seed)
     
     async def reset(self, seed = None):
         pass
 
-    @astep_timer(step_name="Forward")
     async def __forward__(self, date : datetime, seed = None, **kwargs):
         return await self.forward(date= date, seed= seed)
     

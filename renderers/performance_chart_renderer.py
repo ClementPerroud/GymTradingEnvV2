@@ -27,7 +27,7 @@ class PerformanceChartRenderer(AbstractRenderer):
         self.time_manager = self.get_trading_env().time_manager
         self.memory = deque()
         
-    async def render_step(self, action, next_obs, reward, terminated, truncated, trainable, infos):
+    async def render_step(self, action, next_obs, reward, terminated, truncated, infos):
         date = await self.time_manager.get_current_datetime()
         portfolio = await self.exchange_manager.get_portfolio()
         results = await self.gather(
@@ -42,7 +42,7 @@ class PerformanceChartRenderer(AbstractRenderer):
             "portfolio_valuation" : float(portfolio_valuation.amount),
             "portfolio_valuation_asset" : portfolio_valuation.asset.name,
             "reward" : reward,
-            "trainable" : trainable,
+            "trainable" : infos["trainable"],
             "action" : action,
             "portfolio" : portfolio,
             **{f"price_{pair}" : float(ticker_dict[pair].close.amount) for pair in self.pairs}

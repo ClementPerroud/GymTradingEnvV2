@@ -55,15 +55,10 @@ class IntervalTimeManager(AbstractTimeManager, AbstractEnder):
             await asyncio.sleep(delay= delay)
 
     async def check(self) -> Tuple[bool, bool]:
-        trainable = True
-        terminated = False
-        truncated = False
-
         if self.mode.value == Mode.SIMULATION.value:
             if await self.get_current_datetime() >= self.simulation_end_date:
-                truncated = True
-
-        return terminated, truncated, trainable
+                return False, True
+        return False, False
 
 
 

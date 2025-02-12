@@ -20,11 +20,8 @@ class AbstractTradingEnv(gym.Env, CompositeEnder, ABC):
 
         self.initial_enders = enders
 
-        
-
         super().__init__()
         
-
     
     def _prepare_environment_elements(self):
         # Get all the environment elements
@@ -63,7 +60,7 @@ class AbstractTradingEnv(gym.Env, CompositeEnder, ABC):
         if self.mode.value == Mode.SIMULATION.value:
             for i in range(warm_steps_needed + 1):
                 await self.__step__()
-                terminated, truncated, trainable = await self.__check__()
+                terminated, truncated = await self.__check__()
                 if terminated or truncated: raise ValueError("Your environment has been terminated or truncated during initialization.")
 
 

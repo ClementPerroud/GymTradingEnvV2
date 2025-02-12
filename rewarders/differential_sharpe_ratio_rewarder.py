@@ -36,8 +36,8 @@ class ComputedDifferentialSharpeRatioRewarder(AbstractRewarder, AbstractEnder):
         """The reward need to stabilize before beeing relevant."""
         # Return terminated, truncated, trainable
         if self.steps < self.stabilization_steps:
-            return False, False, False
-        return False, False, True
+            return False, False
+        return False, False
 
 
     # Called after forward
@@ -113,8 +113,8 @@ class MoodyDifferentialSharpeRatioRewarder(AbstractRewarder, AbstractEnder):
         """The reward need to stabilize before beeing relevant."""
         # Return terminated, truncated, trainable
         if self.steps < self.stabilization_steps:
-            return False, False, False
-        return False, False, True
+            return False, False
+        return False, False
 
     # Called after forward
     async def compute_reward(self):

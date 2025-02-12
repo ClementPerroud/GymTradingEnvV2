@@ -28,6 +28,7 @@ class TickerObserver(AbstractObserver):
 
     def observation_space(self) -> Space:
         return Dict(spaces = {
+            "ticker_date" : Box(low= 0, high = np.inf, dtype = float),
             "ticker_open" : Box(low= 0, high = np.inf, dtype = float),
             "ticker_high" : Box(low= 0, high = np.inf, dtype = float),
             "ticker_low" : Box(low= 0, high = np.inf, dtype = float),
@@ -39,6 +40,7 @@ class TickerObserver(AbstractObserver):
         if date is None: date = await self.time_manager.get_current_datetime()
         ticker = await self.exchange_manager.get_ticker(pair = self.pair, date = date)
         return {
+            "ticker_date" : date,
             "ticker_open" : float(ticker.open.amount),
             "ticker_high" : float(ticker.high.amount),
             "ticker_low" : float(ticker.low.amount),

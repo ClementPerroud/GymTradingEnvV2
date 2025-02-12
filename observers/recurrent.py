@@ -62,7 +62,7 @@ class RecurrentObserver(AbstractObserver):
         #     return Box(low=-np.inf, high=np.inf, shape=shape, dtype=sub_space.dtype)
         return NotImplemented
 
-    def __manage_memory(self):
+    def _manage_memory(self):
         """
         Remove the oldest entries once the dict grows beyond 4×window.
         We shrink it down to 3×window to leave a small buffer.
@@ -77,23 +77,19 @@ class RecurrentObserver(AbstractObserver):
                 self.memory.popitem(last=False)
 
     @astep_timer(step_name="Get Obs Recurrent")
-    async def get_obs(self, date: datetime = None, current_step = None) -> np.ndarray:
+    async def get_obs(self, date: datetime) -> np.ndarray:
         """
         Return a stacked array of shape (window, sub_observer_obs_shape),
         representing the last window timesteps from sub_observer.
         The earliest time is at index [0], the most recent at index [-1].
         """
-        if current_step is not None: current_step = current_step.step("Get Current Date")
         if date is None:
             date = await self.time_manager.get_current_datetime()
 
         # For a "window" W, we want timesteps [W-1, W-2, ..., 0] steps back
         steps_back = range(self.window - 1, -1, -1)
 
-        if current_step is not None: current_step = current_step.step("Get Historical Date 1 ")
-
         # 1) Compute all relevant historical dates in parallel
-        if current_step is not None: current_step = current_step.step("Get Historical Date 2 ")
 
         # tasks = [self.time_manager.get_historical_datetime(step_back=s, relative_date=date) for s in steps_back]
         # window_dates = await self.gather(*tasks)
@@ -102,13 +98,9 @@ class RecurrentObserver(AbstractObserver):
         for s in steps_back:
             window_dates.append(await self.time_manager.get_historical_datetime(step_back=s, relative_date=date))
 
-        if current_step is not None: current_step = current_step.step("Get Historical Date 3 ")
-
 
         # 2) Identify which of those dates we have not cached
         missing_dates = [d for d in window_dates if d not in self.memory]
-
-        if current_step is not None: current_step = current_step.step("Get Missing Obs")
 
         # 3) Fetch new observations from the sub_observer for missing dates
         if missing_dates:
@@ -117,14 +109,21 @@ class RecurrentObserver(AbstractObserver):
             # Merge new observations into memory
             for d, obs in zip(missing_dates, new_obs): self.memory[d] = obs
 
-        if current_step is not None:
-            current_step = current_step.step("Build Result")
         # 4) Build result in ascending chronological order
         #    (Because steps_back started from farthest in the past -> to present)
         results = [self.memory[d] for d in window_dates]
 
+        if not self.get_trading_env().infos["trainable"]:
+            self.get_trading_env().infos["_unique_trainable"] = True # Tell that this step is really not trainable (and not because of the recurrent process)
+        for window_date in window_dates:
+            historical_infos = self.get_trading_env().historical_infos[date]
+            if window_date != date and not historical_infos['trainable']:
+                if "_unique_trainable" in historical_infos and historical_infos["_unique_trainable"]: # Check if the step was really not trainable
+                    self.get_trading_env().infos["trainable"] = False
+
+
         # 5) Remove old entries if memory is too big
-        self.__manage_memory()
+        self._manage_memory()
 
         # 6) Return as a numpy array of shape (window, ...)
         return results

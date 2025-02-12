@@ -9,11 +9,12 @@ from typing import Dict, Tuple, Union
 
 from .simulation import AbstractPairSimulation
 from ..enders import AbstractEnder
-
+from ..core.pair import Pair
 
 
 class HistoricalSimulation(AbstractPairSimulation, AbstractEnder):
     def __init__(self,
+            pair : Pair,
             date_close_name = "date_close",
             date_open_name = "date_open",
             open_name = "open",
@@ -26,7 +27,7 @@ class HistoricalSimulation(AbstractPairSimulation, AbstractEnder):
             ) -> None:
         
         super().__init__()
-
+        self.pair = pair
         (self.date_close_name, self.date_open_name, self.open_name, 
          self.high_name, self.low_name, self.close_name, self.volume_name) = (
             date_close_name, date_open_name, open_name, 
@@ -112,26 +113,28 @@ class HistoricalSimulation(AbstractPairSimulation, AbstractEnder):
             if self.on_missing_date == "warn" : warn(message= message)
             elif self.on_missing_date == "error" : ValueError(message)
         
-        index_gap = index - self.past_index
-        if index_gap > 0:
+        real_index_gap = index - self.past_index
+        if real_index_gap > 0:
             array = self.data_array[self.past_index + 1:index + 1]
         else:
             array = self.data_array[index: index+1]
-        # if index_gap <= 0: 
+        # if real_index_gap <= 0: 
         #     raise ValueError(f"""
         #         Could not find any data to aggregate between {self.past_date} and {date}.
         #         Please increase you interval or increase the granularity of the dataframe. """)
 
 
         data = self.__aggregrate(array=array)
-        if (date - self.past_date)/self.main_interval * 0.8 > index_gap:
-            self.trainable = False 
+        theoritical_index_gap = (date - self.past_date)/self.main_interval
+        if real_index_gap < theoritical_index_gap * 0.8 :
+            self.get_trading_env().infos["trainable"] = False
+            print(date, "CATCH", self.pair)
 
 
 
         self.update_memory(date=date, data=data)
 
-        self.last_index_gap = index_gap
+        self.last_index_gap = real_index_gap
         self.past_index = index
         self.past_date = date
 
@@ -139,8 +142,7 @@ class HistoricalSimulation(AbstractPairSimulation, AbstractEnder):
     async def check(self) -> Tuple[bool, bool]:
         return (
             False, 
-            (self.past_index + self.last_index_gap + 1) >= self.data_array_len, 
-            self.trainable
+            (self.past_index + self.last_index_gap + 1) >= self.data_array_len
         )
 
         

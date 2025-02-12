@@ -12,7 +12,7 @@ from ..exchanges import AbstractExchange
 from ..rewarders import AbstractRewarder
 from ..actions  import AbstractActionManager
 from ..observers  import AbstractObserver
-from ..enders import AbstractEnder, CompositeEnder, ender_deep_search
+from ..enders import AbstractEnder
 from ..renderers import AbstractRenderer
 from ..utils.speed_analyser import SpeedAnalyser, astep_timer
 
@@ -40,16 +40,22 @@ class RLTradingEnv(AbstractTradingEnv):
         self.observation_space = self.observer.observation_space()
 
         self.speed_analyser = SpeedAnalyser()
+        self.historical_infos = {}
 
     
 
     async def reset(self, seed = None, **kwargs):
+        self.infos = {"trainable" : True}
         self.__step = 0
         await super().__reset__(seed = seed, **kwargs)
         obs = await self.observer.__get_obs__()
+        self.infos["date"] = await self.time_manager.get_current_datetime()
+        self.historical_infos[self.infos["date"]] = self.infos
+
         return obs, {}
 
     async def step(self, action : Any):
+        self.infos = {"trainable" : True}
         # At t : execute action
         await self.action_manager.__execute__(action = action)
 
@@ -61,25 +67,25 @@ class RLTradingEnv(AbstractTradingEnv):
         obs = await self.observer.__get_obs__()
 
         ## Perform ender checks with CompositeEnder
-        terminated, truncated, trainable = await self.__check__()
+        terminated, truncated= await self.__check__()
 
 
         reward = 0
         if not terminated: reward = await self.rewarder.__get__()
-        ## Trigger renderers
-        infos = {
-            "date": await self.time_manager.get_current_datetime(),
-            "trainable" : trainable,
-        }
-        await self.__renderers(action, obs, reward, terminated, truncated, trainable, infos)
 
-        return obs, reward, terminated, truncated, infos
+        self.infos["date"] = await self.time_manager.get_current_datetime()
+        self.historical_infos[self.infos["date"]] = self.infos
+
+        ##  Trigger renderers
+        await self._renderers(action, obs, reward, terminated, truncated, self.infos)
+
+        return obs, reward, terminated, truncated, self.infos
 
     @astep_timer("Renderers")
-    async def __renderers(self, action, obs, reward, terminated, truncated, trainable, infos, **kwargs):
+    async def _renderers(self, action, obs, reward, terminated, truncated, infos, **kwargs):
         render_steps, render_episode = [], []
         for renderer in self.renderers: 
-            render_steps.append(renderer.render_step(action, obs, reward, terminated, truncated, trainable, infos))
+            render_steps.append(renderer.render_step(action, obs, reward, terminated, truncated, infos))
             if terminated or truncated:
                 render_episode.append(renderer.render_episode())
         # First : steps
