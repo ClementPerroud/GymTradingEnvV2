@@ -81,7 +81,6 @@ class RLTradingEnv(AbstractTradingEnv):
 
         return obs, reward, terminated, truncated, self.infos
 
-    @astep_timer("Renderers")
     async def _renderers(self, action, obs, reward, terminated, truncated, infos, **kwargs):
         render_steps, render_episode = [], []
         for renderer in self.renderers: 

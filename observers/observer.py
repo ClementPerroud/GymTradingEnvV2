@@ -10,7 +10,7 @@ class AbstractObserver(AbstractEnvironmentElement, ABC):
     def __init__(self, transform_function = None):
         self._transform_function = transform_function
         super().__init__()
-    @astep_timer(step_name="Get Obs")
+
     async def __get_obs__(self, date : datetime = None, **kwargs) -> np.ndarray:
         return self.transform(await self.get_obs(date= date))
 

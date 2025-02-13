@@ -41,7 +41,7 @@ class ExchangeManager(AbstractExchange):
         # Used for caching portfolio.
         self.nb_orders = 0
 
-    # @alru_cache(maxsize=1)
+    @alru_cache(maxsize=1)
     async def get_available_pairs(self) -> List[Pair]:
         return await self.exchange.get_available_pairs()
     
@@ -56,7 +56,7 @@ class ExchangeManager(AbstractExchange):
         the portfolio did not change (= when no new trade occurs)"""
         return await self.__lru_get_portfolio(nb_orders=self.nb_orders)
     
-    # @alru_cache(maxsize = 100)
+    @alru_cache(maxsize = 100)
     async def __lru_get_portfolio(self, nb_orders):
         return await self.exchange.get_portfolio()
 
@@ -109,7 +109,7 @@ class ExchangeManager(AbstractExchange):
     async def get_quotation(self, pair : Pair, date : datetime):
         return await self.__lru_get_quotation(pair = pair, date = date)
     
-    # @alru_cache(maxsize=1_000)
+    @alru_cache(maxsize=1_000)
     async def __lru_get_quotation(self, pair : Pair, date : datetime):
         from_asset = pair.asset
         to_asset = pair.quote_asset

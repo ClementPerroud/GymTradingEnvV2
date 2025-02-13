@@ -76,7 +76,7 @@ class RecurrentObserver(AbstractObserver):
                 # popitem(last=False) pops the *oldest inserted* item
                 self.memory.popitem(last=False)
 
-    @astep_timer(step_name="Get Obs Recurrent")
+
     async def get_obs(self, date: datetime) -> np.ndarray:
         """
         Return a stacked array of shape (window, sub_observer_obs_shape),

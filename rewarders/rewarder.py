@@ -17,7 +17,6 @@ class AbstractRewarder(AbstractEnvironmentElement, ABC):
     async def compute_reward(self):
         ...
 
-    @astep_timer("Reward")
     async def __get__(self, **kwargs) -> float:
         return await self.get()
     

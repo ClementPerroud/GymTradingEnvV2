@@ -14,7 +14,6 @@ class AbstractActionManager(AbstractEnvironmentElement, ABC):
         super().__init__()
         self.action_history = {}
 
-    @astep_timer(step_name="Execute")
     async def __execute__(self, action : ActType, **kwargs) -> None:
         return await self.execute(action= action)
 

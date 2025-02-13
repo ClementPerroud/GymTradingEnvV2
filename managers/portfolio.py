@@ -17,7 +17,7 @@ class PositionManager(AbstractEnvironmentElement):
     async def reset(self, seed = None):
         self.exchange_manager = self.get_trading_env().exchange_manager
 
-    # @async_lru_cache(maxsize=128)
+    @alru_cache(maxsize=128)
     async def valuation(self, position : Value, date : datetime) -> Value:
         if position.asset == self.quote_asset: return position
         return position * await self.exchange_manager.get_quotation(
@@ -42,7 +42,6 @@ class PortfolioManager(AbstractEnvironmentElement):
         valuations = await self.gather(*valuation_tasks)
         return dict(zip(assets, valuations))
     
-    @astep_timer("Valuation")
     async def valuation(self, portfolio : Portfolio, date : datetime, valuations : Dict[Asset, Value] = None, **kwargs) -> Value:
         if valuations is None: valuations = await self.__valuations(portfolio = portfolio, date= date)
         _sum = Value(Decimal('0'), self.position_manager.quote_asset)
@@ -51,7 +50,7 @@ class PortfolioManager(AbstractEnvironmentElement):
         return _sum
     
     
-    # @alru_cache(maxsize=128)
+    @alru_cache(maxsize=128)
     async def exposition(self, portfolio : Portfolio, date : datetime ) -> PortfolioExposition:
         valuations = await self.__valuations(portfolio= portfolio, date=date)
         total_valuation = await self.valuation(portfolio = portfolio, date=date, valuations= valuations)

@@ -6,8 +6,7 @@ from ..element import AbstractEnvironmentElement
 from ..utils.speed_analyser import astep_timer
 
 class AbstractEnder(AbstractEnvironmentElement, ABC):
-    
-    @astep_timer(step_name="Check")
+
     async def __check__(self, **kwargs) -> Tuple[bool , bool]:
         return await self.check()
     
