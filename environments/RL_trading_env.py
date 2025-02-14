@@ -52,7 +52,7 @@ class RLTradingEnv(AbstractTradingEnv):
         self.infos["date"] = await self.time_manager.get_current_datetime()
         self.historical_infos[self.infos["date"]] = self.infos
 
-        return obs, {}
+        return obs, self.infos
 
     async def step(self, action : Any):
         self.infos = {"trainable" : True}
