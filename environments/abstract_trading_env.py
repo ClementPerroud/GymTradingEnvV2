@@ -43,7 +43,7 @@ class AbstractTradingEnv(gym.Env, CompositeEnder, ABC):
     async def reset(self, seed = None):
         ...
 
-    async def __reset__(self, seed = None):
+    async def __reset__(self, seed = None, _try = 0):
 
         self._prepare_environment_elements()
         # Prepare the environment elements and retrieve the warmup steps needed
@@ -61,7 +61,11 @@ class AbstractTradingEnv(gym.Env, CompositeEnder, ABC):
             for i in range(warm_steps_needed + 1):
                 await self.__step__()
                 terminated, truncated = await self.__check__()
-                if terminated or truncated: raise ValueError("Your environment has been terminated or truncated during initialization.")
+                if terminated or truncated:
+                    if _try >= 3: raise ValueError("Your environment has been terminated or truncated during initialization too many times.")
+                    print(f"Warning : The environment initialization failed. Retry {_try + 1} ...")
+                    return await self.__reset__(seed = seed, _try = _try + 1) 
+
 
 
     @abstractmethod
