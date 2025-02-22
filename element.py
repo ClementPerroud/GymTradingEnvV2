@@ -58,9 +58,10 @@ class AbstractEnvironmentElement(ABC):
     async def gather(self, *tasks):
         if self.get_trading_env().mode == Mode.PRODUCTION:
             return await asyncio.gather(*tasks)
-        else:
-            return [await task for task in tasks]
-        return self.__class__.__name__
+        
+        # It is actually faster not to use asyncio.gather when we don't have async tasks to perform (which is mostly the case in Simulation)
+        return [await task for task in tasks]
+
 
 
 def element_deep_search(element,  excluded_classes = []) -> List[AbstractEnvironmentElement]:

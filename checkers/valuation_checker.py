@@ -5,19 +5,19 @@ from ..exchanges import AbstractExchange
 from ..managers.portfolio import PortfolioManager
 from ..core import Value
 
-from .ender import AbstractEnder
+from .checker import AbstractChecker
 
-class ValuationEnder(AbstractEnder):
+class ValuationChecker(AbstractChecker):
     def __init__(self,
             valuation_threeshold : Value,
         ) -> None:
         self.valuation_threeshold = valuation_threeshold
         self.quote_asset = valuation_threeshold.asset
-        self.portfolio_manager = PortfolioManager(quote_asset= self.quote_asset)
 
     async def reset(self, seed = None):
         self.exchange_manager = self.get_trading_env().exchange_manager
         self.time_manager = self.get_trading_env().time_manager
+        self.portfolio_manager = self.get_trading_env().portfolio_manager
 
     
     async def check(self) -> Tuple[bool, bool]:
@@ -25,9 +25,10 @@ class ValuationEnder(AbstractEnder):
         date = await self.time_manager.get_current_datetime()
         valuation = await self.portfolio_manager.valuation(
             portfolio = portfolio,
-            date = date
+            date = date,
+            quote_asset= self.quote_asset
         )
         terminated = valuation <= self.valuation_threeshold
 
-        truncated = False
-        return terminated, truncated
+        truncated, trainable = False, True
+        return terminated, truncated, trainable

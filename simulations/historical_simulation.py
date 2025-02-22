@@ -8,11 +8,11 @@ from warnings import warn
 from typing import Dict, Tuple, Union
 
 from .simulation import AbstractPairSimulation
-from ..enders import AbstractEnder
+from ..checkers import AbstractChecker
 from ..core.pair import Pair
 
 
-class HistoricalSimulation(AbstractPairSimulation, AbstractEnder):
+class HistoricalSimulation(AbstractPairSimulation, AbstractChecker):
     def __init__(self,
             pair : Pair,
             date_close_name = "date_close",
@@ -126,8 +126,9 @@ class HistoricalSimulation(AbstractPairSimulation, AbstractEnder):
 
         data = self.__aggregrate(array=array)
         theoritical_index_gap = (date - self.past_date)/self.main_interval
+        self.last_trainable = True
         if real_index_gap < theoritical_index_gap * 0.8 :
-            self.get_trading_env().infos["trainable"] = False
+            self.last_trainable= False
 
 
 
@@ -141,7 +142,8 @@ class HistoricalSimulation(AbstractPairSimulation, AbstractEnder):
     async def check(self) -> Tuple[bool, bool]:
         return (
             False, 
-            (self.past_index + self.last_index_gap + 1) >= self.data_array_len
+            (self.past_index + self.last_index_gap + 1) >= self.data_array_len,
+            self.last_trainable
         )
 
         

@@ -3,18 +3,12 @@ from datetime import datetime
 import pandas as pd
 import numpy as np
 import pytz
-from copy import deepcopy
-from functools import lru_cache
 from typing import List
 from binance import AsyncClient
 
 from ..core import Asset, Pair, Quotation, Portfolio, Value
-from ..simulations.simulation import AbstractPairSimulation
-from ..time_managers import AbstractTimeManager
-from ..utils.async_lru import alru_cache
 
 from .responses import OrderResponse, TickerResponse
-from .exceptions import PairNotFound
 from .exchange import AbstractExchange
 
 class BinanceProductionExchange(AbstractExchange):
@@ -27,13 +21,12 @@ class BinanceProductionExchange(AbstractExchange):
         self.kline_interval = kline_interval
 
     async def reset(self, seed = None) -> None:
+        await super().reset(seed = seed)
         if self.client is None:
             self.client = await AsyncClient.create(self.api_key, self.api_secret, testnet= self.testnet)
         
         self.time_manager = self.get_trading_env().time_manager
-        self.get_info.cache_clear()
     
-    # @alru_cache(maxsize=1)
     async def get_info(self):
         info = await self.client.get_exchange_info()
         self.__symbol_infos = {}
@@ -58,7 +51,6 @@ class BinanceProductionExchange(AbstractExchange):
         pairs = [Pair(asset= assets[d["baseAsset"]], quote_asset=assets[d["quoteAsset"]]) for d in symbols_info]
         return pairs
 
-    
     async def get_ticker(self, pair : Pair, date : datetime = None) -> TickerResponse:
         if date is None: date = await self.time_manager.get_current_datetime()
 

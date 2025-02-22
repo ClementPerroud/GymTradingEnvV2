@@ -12,11 +12,11 @@ class ExpositionObserver(AbstractObserver):
         super().__init__(**kwargs)
         self.pairs = pairs
         self.quote_asset = quote_asset
-        self.portfolio_manager = PortfolioManager(quote_asset=self.quote_asset)
 
     async def reset(self, seed = None) -> None:
         self.time_manager = self.get_trading_env().time_manager
         self.exchange_manager = self.get_trading_env().exchange_manager
+        self.portfolio_manager = self.get_trading_env().portfolio_manager
     
     @property
     def simulation_warmup_steps(self):
@@ -29,7 +29,11 @@ class ExpositionObserver(AbstractObserver):
     
     async def get_obs(self, date : datetime = None):
         portfolio = await self.exchange_manager.get_portfolio()
-        exposition = await self.portfolio_manager.exposition(portfolio= portfolio, date= date)
+        exposition = await self.portfolio_manager.exposition(
+            portfolio= portfolio,
+            date= date,
+            quote_asset= self.quote_asset
+        )
         result = {}
         for i, pair in enumerate(self.pairs):
             pair_exposition = exposition.get_position(asset = pair.asset)

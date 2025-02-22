@@ -20,9 +20,9 @@ class ExchangeManager(AbstractExchange):
     
     async def reset(self, seed = None):
         # Reset cached memory
-        # self.get_available_pairs.cache_clear()
-        # self.__lru_get_portfolio.cache_clear()
-        # self.__lru_get_quotation.cache_clear()
+        self.get_available_pairs.cache_clear()
+        self.__lru_get_portfolio.cache_clear()
+        self.__lru_get_quotation.cache_clear()
         # self.__lru_get_ticker.cache_clear()
         
         self.time_manager = self.get_trading_env().time_manager

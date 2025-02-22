@@ -1,9 +1,9 @@
 from datetime import datetime
 from typing import Tuple
 
-from .ender import AbstractEnder
+from .checker import AbstractChecker
 
-class DateEnder(AbstractEnder):
+class DateChecker(AbstractChecker):
     def __init__(self,
             end_date : datetime,
         ) -> None:
@@ -13,11 +13,11 @@ class DateEnder(AbstractEnder):
         self.time_mangager = self.get_trading_env().time_manager
 
     
-    async def check(self) -> Tuple[bool, bool]:
-        terminated = False
-        truncated = False
+    async def check(self) -> Tuple[bool, bool, bool]:
+        terminated, truncated, trainable = False, False, True
+
 
         if await self.time_mangager.get_current_datetime() >= self.end_date:
             truncated = True
 
-        return terminated, truncated
+        return terminated, truncated, trainable

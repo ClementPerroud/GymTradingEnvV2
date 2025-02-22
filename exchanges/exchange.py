@@ -7,14 +7,13 @@ from ..core import Pair, Quotation, Portfolio, Value
 from ..element import AbstractEnvironmentElement
 from .responses import OrderResponse, TickerResponse
 from .exceptions import PairNotFound
-from ..utils.speed_analyser import astep_timer
-from ..utils.async_lru import alru_cache
 
 class AbstractExchange(AbstractEnvironmentElement, ABC):
     @property
     def order_index(self):
         return -100
     
+
     @abstractmethod
     async def get_available_pairs(self) -> List[Pair]:
         ...
@@ -23,7 +22,6 @@ class AbstractExchange(AbstractEnvironmentElement, ABC):
     async def get_ticker(self, pair : Pair, date) -> TickerResponse:
         ...
 
-    @alru_cache(maxsize=1_000)
     async def get_quotation(self, pair : Pair, date) -> Quotation:
         try:
             return (await self.get_ticker(pair = pair, date= date)).price

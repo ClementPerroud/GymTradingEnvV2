@@ -18,50 +18,31 @@ class PerformanceChartRenderer(AbstractRenderer):
         super().__init__()
         self.quote_asset = quote_asset
         self.pairs = pairs
-        self.portfolio_manager = PortfolioManager(quote_asset= self.quote_asset)
         self.title = title
         self.plot = plot
 
     async def reset(self, seed = None):
-        self.exchange_manager = self.get_trading_env().exchange_manager
-        self.time_manager = self.get_trading_env().time_manager
+        self.infos_manager = self.get_trading_env().infos_manager
         self.memory = deque()
         
-    async def render_step(self, action, next_obs, reward, terminated, truncated, infos):
-        date = await self.time_manager.get_current_datetime()
-        portfolio = await self.exchange_manager.get_portfolio()
-        results = await self.gather(
-            self.portfolio_manager.valuation(portfolio= portfolio, date= date),
-            self.portfolio_manager.exposition(portfolio= portfolio, date= date),
-            *[self.exchange_manager.get_ticker(pair= pair, date=date) for pair in self.pairs],
-        )
-        portfolio_valuation, portfolio_exposition = results[0], results[1]
-        ticker_dict : List[TickerResponse] = dict(zip(self.pairs, results[2:]))
-        self.memory.append({
-            "date": date,
-            "portfolio_valuation" : float(portfolio_valuation.amount),
-            "portfolio_valuation_asset" : portfolio_valuation.asset.name,
-            "reward" : reward,
-            "trainable" : infos["trainable"],
-            "action" : action,
-            "portfolio" : portfolio,
-            **{f"price_{pair}" : float(ticker_dict[pair].close.amount) for pair in self.pairs}
-        })
+
 
     async def render_episode(self):
         if len(self.memory) <= 1: return
 
         # Extracting data from memory deque
-        dates, valuations, rewards, actions = [], [], [], []
+        dates = sorted(self.infos_manager.historical_infos.keys())
+        
+        valuations, rewards, actions = [], [], []
         pair_prices = {pair : [] for pair in self.pairs}
-        for index, elem in enumerate(self.memory):
+        for date in dates:
+            infos = self.infos_manager.historical_infos[date]
             # if index < 1500 or index > 1700: continue
-            dates.append(elem["date"])
-            valuations.append(elem["portfolio_valuation"])
-            actions.append(elem["action"])
-            rewards.append(elem["reward"] if elem["trainable"] else 0)
+            valuations.append(infos["portfolio_valuation"])
+            actions.append(infos["action"])
+            rewards.append(infos["reward"] if infos["trainable"] else 0)
             for pair in self.pairs:
-                pair_prices[pair].append(elem[f"price_{pair}"])
+                pair_prices[pair].append(infos[f"price_{pair}"])
         valuation_asset = self.memory[-1]["portfolio_valuation_asset"]
 
         valuations = np.array(valuations)

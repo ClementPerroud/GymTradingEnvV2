@@ -12,11 +12,11 @@ class DiscreteExpositionAction(AbstractAction):
     def __init__(self, target_exposition : Dict[Asset, Decimal], quote_asset : Asset):
         self.quote_asset = quote_asset
         self.target_exposition = PortfolioExposition(expositions= target_exposition)
-        self.portfolio_manager = PortfolioManager(quote_asset = self.quote_asset)
         
     async def reset(self, seed = None):
         self.exchange_manager = self.get_trading_env().exchange_manager
         self.time_manager = self.get_trading_env().time_manager
+        self.portfolio_manager = self.get_trading_env().portfolio_manager
 
     async def execute_order(self, asset_to_decrease : Asset, asset_to_increase : Asset, quantity_quote_asset : Value):
         quote_asset = quantity_quote_asset.asset
@@ -42,14 +42,15 @@ class DiscreteExpositionAction(AbstractAction):
         total_valuation, current_exposition = await self.gather(
             self.portfolio_manager.valuation(
                 portfolio= current_position,
-                date= date
+                date= date,
+                quote_asset= self.quote_asset
             ),
             self.portfolio_manager.exposition(
                 portfolio= current_position,
-                date= date
+                date= date,
+                quote_asset= self.quote_asset
             )
         )
-        quote_asset = total_valuation.asset
 
         diff_exposition = self.target_exposition - current_exposition
         diff_positions_percent = diff_exposition.get_positions()

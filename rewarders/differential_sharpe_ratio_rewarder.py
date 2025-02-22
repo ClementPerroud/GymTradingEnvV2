@@ -8,22 +8,22 @@ from .rewarder import AbstractRewarder
 from ..exchanges import AbstractExchange
 from ..managers.portfolio import PortfolioManager
 from ..time_managers import AbstractTimeManager
-from ..enders import AbstractEnder
+from ..checkers import AbstractChecker
 from ..settings import SETTINGS
 
-class ComputedDifferentialSharpeRatioRewarder(AbstractRewarder, AbstractEnder):
+class ComputedDifferentialSharpeRatioRewarder(AbstractRewarder, AbstractChecker):
     def __init__(self, eta : Decimal, initial_portfolio :Portfolio, quote_asset : Asset, multiply_by = 800) -> None:
         super().__init__(multiply_by= multiply_by)
         self.eta = eta
         self.stabilization_steps = int(1 / (self.eta**0.6)) + 10
         self.initial_portfolio = initial_portfolio
         self.quote_asset = quote_asset
-        self.portfolio_manager = PortfolioManager(quote_asset=self.quote_asset)
 
     
     async def reset(self, seed = None):
         self.exchange_manager  = self.get_trading_env().exchange_manager
         self.time_manager = self.get_trading_env().time_manager
+        self.portfolio_manager = self.get_trading_env().portfolio_manager
         self.last_valuation = await self.__compute_valuation(portfolio= self.initial_portfolio, date= await self.time_manager.get_current_datetime())
         # self.A_last = 0
         # self.B_last = 0
@@ -36,8 +36,8 @@ class ComputedDifferentialSharpeRatioRewarder(AbstractRewarder, AbstractEnder):
         """The reward need to stabilize before beeing relevant."""
         # Return terminated, truncated, trainable
         if self.steps < self.stabilization_steps:
-            return False, False
-        return False, False
+            return False, False, False
+        return False, False, True
 
 
     # Called after forward
@@ -81,26 +81,22 @@ class ComputedDifferentialSharpeRatioRewarder(AbstractRewarder, AbstractEnder):
 
     async def __compute_valuation(self, portfolio : Portfolio, date : datetime = None):
         return await self.portfolio_manager.valuation(
-            portfolio= portfolio, date= date
+            portfolio= portfolio, date= date, quote_asset= self.quote_asset
         )  
     
 
-class MoodyDifferentialSharpeRatioRewarder(AbstractRewarder, AbstractEnder):
+class MoodyDifferentialSharpeRatioRewarder(AbstractRewarder, AbstractChecker):
     def __init__(self, eta : Decimal, quote_asset : Asset, multiply_by = 800) -> None:
         super().__init__(multiply_by= multiply_by)
         self.eta = eta
         self.stabilization_steps = int(1 / (self.eta ** Decimal('0.6'))) + 10
         self.quote_asset = quote_asset
-        self.portfolio_manager = PortfolioManager(quote_asset=self.quote_asset)
-
-    def get_eta(self) -> Decimal:
-        if self.steps >= self.stabilization_steps : return self.eta
-        ratio = Decimal.from_float(self.steps / self.stabilization_steps)
-        return Decimal("0.1") * (1 - ratio) + self.eta * ratio
+    
     
     async def reset(self, seed = None):
         self.exchange_manager  = self.get_trading_env().exchange_manager
         self.time_manager = self.get_trading_env().time_manager
+        self.portfolio_manager = self.get_trading_env().portfolio_manager
 
         portfolio = await self.exchange_manager.get_portfolio()
         self.last_valuation = await self.__compute_valuation(portfolio= portfolio, date= await self.time_manager.get_current_datetime())
@@ -108,13 +104,18 @@ class MoodyDifferentialSharpeRatioRewarder(AbstractRewarder, AbstractEnder):
         self.A_last = Decimal("0")
         self.B_last = Decimal("0")
         self.steps = 0
+    
+    def get_eta(self) -> Decimal:
+        if self.steps >= self.stabilization_steps : return self.eta
+        ratio = Decimal.from_float(self.steps / self.stabilization_steps)
+        return Decimal("0.1") * (1 - ratio) + self.eta * ratio
           
     async def check(self):
         """The reward need to stabilize before beeing relevant."""
-        # Return terminated, truncated, trainable
+        # Return terminated, truncated
         if self.steps < self.stabilization_steps:
-            return False, False
-        return False, False
+            return False, False, False
+        return False, False, True
 
     # Called after forward
     async def compute_reward(self):
@@ -172,5 +173,5 @@ class MoodyDifferentialSharpeRatioRewarder(AbstractRewarder, AbstractEnder):
 
     async def __compute_valuation(self, portfolio : Portfolio, date : datetime = None):
         return await self.portfolio_manager.valuation(
-            portfolio= portfolio, date= date
+            portfolio= portfolio, date= date, quote_asset= self.quote_asset
         )  

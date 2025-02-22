@@ -7,10 +7,10 @@ from typing import Tuple
 
 
 from .time_manager import AbstractTimeManager
-from ..enders import AbstractEnder
+from ..checkers import AbstractChecker
 from ..element import Mode
 
-class IntervalTimeManager(AbstractTimeManager, AbstractEnder):
+class IntervalTimeManager(AbstractTimeManager, AbstractChecker):
     def __init__(self, interval : timedelta, base_offset : timedelta = None, simulation_start_date : datetime = None, simulation_end_date : datetime = None) -> None:
         self.interval = interval
         self.base_offset = base_offset
@@ -57,8 +57,8 @@ class IntervalTimeManager(AbstractTimeManager, AbstractEnder):
     async def check(self) -> Tuple[bool, bool]:
         if self.mode.value == Mode.SIMULATION.value:
             if await self.get_current_datetime() >= self.simulation_end_date:
-                return False, True
-        return False, False
+                return False, True, True
+        return False, False, True
 
 
 

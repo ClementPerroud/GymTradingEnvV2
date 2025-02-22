@@ -33,13 +33,19 @@ class RecurrentObserver(AbstractObserver):
         # Holds date -> observation. We only keep enough entries
         # to serve up to 'window' calls (with some buffer).
         self.memory = OrderedDict()
+        self.first = True
 
     async def reset(self, seed=None) -> None:
         """
         Reset the observer and clear cached memory of past observations.
         """
         self.time_manager = self.get_trading_env().time_manager
+        self.infos_manager = self.get_trading_env().infos_manager
         self.memory.clear()
+
+        if self.first:
+            self.infos_manager.infos_func.append(self.reccurent_check)
+        self.first = False
 
     @property
     def simulation_warmup_steps(self) -> int:
@@ -113,20 +119,31 @@ class RecurrentObserver(AbstractObserver):
         #    (Because steps_back started from farthest in the past -> to present)
         results = [self.memory[d] for d in window_dates]
 
-        if not self.get_trading_env().infos["trainable"]:
-            self.get_trading_env().infos["_unique_trainable"] = True # Tell that this step is really not trainable (and not because of the recurrent process)
-        for window_date in window_dates:
-            if window_date < date and window_date in self.get_trading_env().historical_infos:
-                historical_infos = self.get_trading_env().historical_infos[window_date]
-                if (
-                        historical_infos['trainable']
-                        and "_unique_trainable" in historical_infos and historical_infos["_unique_trainable"]  # Check if the step was really not trainable
-                    ):
-                    self.get_trading_env().infos["trainable"] = False
 
         # 5) Remove old entries if memory is too big
         self._manage_memory()
 
+        self.last_window_dates = window_dates
+
         # 6) Return as a numpy array of shape (window, ...)
         return results
         # return [np.array(results)
+
+    async def reccurent_check(self, infos):
+        date = await self.time_manager.get_current_datetime()
+
+        if not infos["trainable"]: return {
+            "_reccurent_trainable" : False,
+            "trainable" : False
+        }
+
+        for window_date in self.last_window_dates:
+            if window_date < date and window_date in self.infos_manager.historical_infos:
+                historical_infos = self.infos_manager.historical_infos[window_date]
+                if not historical_infos['_reccurent_trainable']:
+                    return {
+                        "_reccurent_trainable" : True,
+                        "trainable" : False
+                    }
+        return {"_reccurent_trainable" : True, "trainable" : True}
+    

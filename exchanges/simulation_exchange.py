@@ -6,7 +6,6 @@ from typing import List, Dict
 from ..core import Asset, Pair, Quotation, Portfolio, Value
 from ..simulations.simulation import AbstractPairSimulation
 from ..time_managers import AbstractTimeManager
-from ..utils.async_lru import alru_cache
 from ..utils.speed_analyser import astep_timer
 
 from .responses import OrderResponse, TickerResponse
@@ -28,6 +27,7 @@ class SimulationExchange(AbstractExchange):
         self.trading_fees_ratio = Decimal('1') - trading_fees_pct
 
     async def reset(self, seed = None):
+        await super().reset(seed = seed)
         self.portfolio = deepcopy(self.initial_portfolio)
         self.time_manager : AbstractTimeManager = self.get_trading_env().time_manager
 
@@ -50,7 +50,6 @@ class SimulationExchange(AbstractExchange):
     async def get_available_pairs(self) -> List[Pair]: 
         return list(self.pair_simulations.keys())
     
-    @alru_cache(maxsize= 1_000)
     async def get_ticker(self, pair : Pair, date : datetime, **kwargs) -> TickerResponse:
         if pair not in self.pair_simulations : raise PairNotFound(pair= pair)
 
@@ -114,7 +113,7 @@ class SimulationExchange(AbstractExchange):
             post_fees_quantity_counterpart= quantity_counterpart* self.trading_fees_ratio
         fees = abs(post_fees_quantity_counterpart- quantity_counterpart)
 
-        self.portfolio = deepcopy(self.portfolio)
+        self.portfolio = await self.get_portfolio()
 
         self.portfolio.add_positions(
             positions = [

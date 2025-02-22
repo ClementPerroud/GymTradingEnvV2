@@ -5,13 +5,10 @@ from typing import List, Tuple
 from ..element import AbstractEnvironmentElement
 from ..utils.speed_analyser import astep_timer
 
-class AbstractEnder(AbstractEnvironmentElement, ABC):
-
-    async def __check__(self, **kwargs) -> Tuple[bool , bool]:
-        return await self.check()
+class AbstractChecker(AbstractEnvironmentElement, ABC):
     
     @abstractmethod
-    async def check(self) -> Tuple[bool , bool]:
+    async def check(self) -> Tuple[bool , bool, bool]:
         """_summary_
 
         Returns:
@@ -19,7 +16,7 @@ class AbstractEnder(AbstractEnvironmentElement, ABC):
         """
         ...
 
-def ender_deep_search(list_elements : List) -> List[AbstractEnder]:
-    return [element for element in list_elements if isinstance(element, AbstractEnder)]
+def checker_deep_search(list_elements : List) -> List[AbstractChecker]:
+    return [element for element in list_elements if isinstance(element, AbstractChecker)]
 
 

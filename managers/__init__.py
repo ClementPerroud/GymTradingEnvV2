@@ -1,2 +1,2 @@
-from .portfolio import PositionManager, PortfolioManager
+from .portfolio import PortfolioManager
 from .exchange import ExchangeManager

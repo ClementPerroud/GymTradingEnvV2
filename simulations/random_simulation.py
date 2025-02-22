@@ -30,7 +30,7 @@ class RandomPairSimulation(AbstractPairSimulation):
         self.time_manager = self.get_trading_env().time_manager
         self._date = await self.time_manager.get_current_datetime()
         self.last_close = self.initial_price_amount
-
+        self.get_distribution_mean_std().cache_clear()
 
 
     def __compute_next_candle(self, interval : timedelta):
