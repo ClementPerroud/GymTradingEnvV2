@@ -6,7 +6,7 @@ from typing import List
 
 from ..time_managers import AbstractTimeManager
 from ..exchanges import AbstractExchange
-from ..observers import AbstractObserver
+from ..renderers import AbstractRenderer
 from ..managers import PortfolioManager
 from ..checkers import AbstractChecker, checker_deep_search
 from ..element import AbstractEnvironmentElement, element_deep_search, Mode
@@ -15,7 +15,7 @@ from ..infos_manager import InfosManager
 
 class AbstractTradingEnv(gym.Env, AbstractChecker, AbstractEnvironmentElement, ABC):
     instances = {}
-    def __init__(self, mode : Mode, time_manager : AbstractTimeManager, exchange_manager : AbstractExchange, checkers : List[AbstractChecker], infos_manager : InfosManager):
+    def __init__(self, mode : Mode, time_manager : AbstractTimeManager, exchange_manager : AbstractExchange, checkers : List[AbstractChecker], infos_manager : InfosManager, renderers : List[AbstractRenderer]) -> None:
         self.mode = mode
         self.time_manager = time_manager
         self.exchange_manager = exchange_manager
@@ -23,6 +23,7 @@ class AbstractTradingEnv(gym.Env, AbstractChecker, AbstractEnvironmentElement, A
 
         self.initial_checkers = checkers
         self.infos_manager = infos_manager
+        self.renderers = renderers
 
         super().__init__()
         

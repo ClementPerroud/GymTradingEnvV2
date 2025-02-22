@@ -32,12 +32,11 @@ class RLTradingEnv(AbstractTradingEnv):
             renderers : List[AbstractRenderer] = [],
         ) -> None:
         
-        super().__init__(mode = mode, time_manager= time_manager, exchange_manager= exchange_manager, infos_manager = infos_manager, checkers= checkers)
+        super().__init__(mode = mode, time_manager= time_manager, exchange_manager= exchange_manager, infos_manager = infos_manager, checkers= checkers, renderers = renderers)
 
         self.action_manager = action_manager
         self.observer = observer
         self.rewarder = rewarder
-        self.renderers = renderers
 
         self.action_space = self.action_manager.action_space()
         self.observation_space = self.observer.observation_space()

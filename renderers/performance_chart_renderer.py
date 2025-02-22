@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from typing import List
 from collections import deque
 import numpy as np
+import pandas as pd
 
 from .renderer import AbstractRenderer
 from ..managers.portfolio import PortfolioManager
@@ -25,79 +26,93 @@ class PerformanceChartRenderer(AbstractRenderer):
         self.infos_manager = self.get_trading_env().infos_manager
         self.memory = deque()
         
-
+    async def render_step(self, *args, **kwargs):
+        pass
 
     async def render_episode(self):
-        if len(self.memory) <= 1: return
 
-        # Extracting data from memory deque
-        dates = sorted(self.infos_manager.historical_infos.keys())
+        # 1. Transform historical_infos into a DataFrame
+        records = []
+        for date, infos in self.infos_manager.historical_infos.items():
+            records.append(infos)
+
+        # Create and sort DataFrame by date
+        df = pd.DataFrame(records).sort_values("date").reset_index(drop=True)
+
+        # 2. Extract relevant columns
+        dates = df["date"]
+        valuations = df["portfolio_valuation"].values
+        actions = df["action"].values
+        rewards = df["reward"].values
         
-        valuations, rewards, actions = [], [], []
-        pair_prices = {pair : [] for pair in self.pairs}
-        for date in dates:
-            infos = self.infos_manager.historical_infos[date]
-            # if index < 1500 or index > 1700: continue
-            valuations.append(infos["portfolio_valuation"])
-            actions.append(infos["action"])
-            rewards.append(infos["reward"] if infos["trainable"] else 0)
-            for pair in self.pairs:
-                pair_prices[pair].append(infos[f"price_{pair}"])
-        valuation_asset = self.memory[-1]["portfolio_valuation_asset"]
-
-        valuations = np.array(valuations)
-
-        # Analysing and computation of :
-        # Annualized Portfolio Return, Annualized Market Returns, Sharpe Ratio
-        elapsed_time = dates[-1] - dates[0]
-        mean_interval = (elapsed_time / (len(dates)-1) )
-
-        # Portfolio Return 
-        portfolio_return = (max(valuations[-1],0) - valuations[0]) / (valuations[0])
-        annualized_portfolio_return = (1+portfolio_return) ** (timedelta(days=365.25) / elapsed_time) - 1
+        # We can also reference pair prices directly by columns, for example:
+        # df[f"price_{pair}"]
+        
+        # 3. Compute intervals and metrics
+        valuation_asset = df["portfolio_valuation_asset"].iloc[0]
+        elapsed_time = dates.iloc[-1] - dates.iloc[0]
+        mean_interval = elapsed_time / (len(df) - 1)
+        
+        # Portfolio Return
+        portfolio_return = (max(valuations[-1], 0) - valuations[0]) / valuations[0]
+        annualized_portfolio_return = (1 + portfolio_return) ** (
+            timedelta(days=365.25) / elapsed_time
+        ) - 1
         
         # Market Returns
         annualized_market_returns = {}
         for pair in self.pairs:
-            market_returns = (pair_prices[pair][-1] - pair_prices[pair][0]) / (pair_prices[pair][0])
-            annualized_market_returns[pair] = (1+market_returns) ** (timedelta(days=365.25) / elapsed_time) - 1
+            pair_prices = df[f"price_{pair}"].values
+            market_returns = (pair_prices[-1] - pair_prices[0]) / pair_prices[0]
+            annualized_market_returns[pair] = (1 + market_returns) ** (
+                timedelta(days=365.25) / elapsed_time
+            ) - 1
         
         # Sharpe Ratio
         all_returns = np.diff(valuations) / valuations[:-1]
-        sharpe_ratio = np.mean(all_returns) / (np.std(all_returns) + 1E-6)
-        sharpe_ratio *= (timedelta(days = 365.25) / mean_interval)**(0.5)
+        sharpe_ratio = np.mean(all_returns) / (np.std(all_returns) + 1e-6)
+        sharpe_ratio *= (timedelta(days=365.25) / mean_interval) ** 0.5
 
+        # 4. (Optional) Plot results if self.plot is True
         if self.plot:
-            # Display of graphs
-            fig, ax = plt.subplots(1, 1, figsize = (6, 1.5), dpi =300)
+            fig, ax = plt.subplots(1, 1, figsize=(6, 1.5), dpi=300)
             
             # Plot Portfolio Valuation
-            ax.tick_params(axis='both', labelsize=5)
+            ax.tick_params(axis="both", labelsize=5)
             ax.plot(
-                dates,valuations,
-                color = "navy", linewidth = 0.7, label = "Portfolio Valuation"
+                dates, valuations,
+                color="navy", linewidth=0.7, label="Portfolio Valuation"
             )
 
+            # Plot each pair's normalized price
             for pair in self.pairs:
+                pair_prices = df[f"price_{pair}"].values
                 ax.plot(
                     dates,
-                    np.array(pair_prices[pair])*valuations[0]/pair_prices[pair][0],
-                    linewidth = 0.7, label = f"Price of {pair}"
+                    pair_prices * valuations[0] / pair_prices[0],
+                    linewidth=0.7,
+                    label=f"Price of {pair}"
                 )
+            
             ax.set_yscale("log")
             ax.set_title(self.title)
-            ax.grid(color='lightgray', linestyle='--', linewidth=0.5)
-            fig.legend(loc = "lower center", fontsize = 6)
+            ax.grid(color="lightgray", linestyle="--", linewidth=0.5)
+            fig.legend(loc="lower center", fontsize=6)
             plt.show()
-        
+
+        # 5. Print summary metrics
         print(
-            color.BOLD,
-            f"Date : {dates[-1].strftime('%d/%m/%Y %H:%M')}",
-            f"Valuation : {valuations[-1]:0.2f} {valuation_asset}\t",
-            f"Sharpe Ratio : {sharpe_ratio:0.2f}\t",
-            f"Annualized Portfolio Return : {100*annualized_portfolio_return:0.2f}%\t",
-            *[f"Annualized {pair} Return : {100*annualized_market_returns[pair]:0.2f}%\t" for pair in self.pairs],
-            end= color.END + "\n"
+            
+            f"{color.BOLD}Date : {dates.iloc[-1].strftime('%d/%m/%Y %H:%M')}",
+            f"Valuation : {valuations[-1]:0.2f} {valuation_asset}",
+            f"Sharpe Ratio : {sharpe_ratio:0.2f}",
+            f"Annualized Portfolio Return : {100*annualized_portfolio_return:0.2f}%",
+            *[
+                f"Annualized {pair} Return : {100*annualized_market_returns[pair]:0.2f}%"
+                for pair in self.pairs
+            ],
+            color.END,
+            sep="\t"
         )
 
 
