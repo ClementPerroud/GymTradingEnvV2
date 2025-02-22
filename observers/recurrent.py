@@ -17,7 +17,7 @@ class RecurrentObserver(AbstractObserver):
     it queries the sub_observer for the last 'window' timesteps.
     """
 
-    def __init__(self, sub_observer: AbstractObserver, window: int, **kwargs) -> None:
+    def __init__(self, sub_observer: AbstractObserver, window: int, not_trainable_window = None, **kwargs) -> None:
         """
         Parameters
         ----------
@@ -29,6 +29,7 @@ class RecurrentObserver(AbstractObserver):
         super().__init__(**kwargs)
         self.sub_observer = sub_observer
         self.window = window
+        self.not_trainable_window = not_trainable_window if not_trainable_window is not None else window 
 
         # Holds date -> observation. We only keep enough entries
         # to serve up to 'window' calls (with some buffer).
@@ -137,7 +138,7 @@ class RecurrentObserver(AbstractObserver):
             "trainable" : False
         }
 
-        for window_date in self.last_window_dates:
+        for window_date in self.last_window_dates[-self.not_trainable_window:]:
             if window_date < date and window_date in self.infos_manager.historical_infos:
                 historical_infos = self.infos_manager.historical_infos[window_date]
                 if not historical_infos['_reccurent_trainable']:

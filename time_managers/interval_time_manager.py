@@ -11,17 +11,18 @@ from ..checkers import AbstractChecker
 from ..element import Mode
 
 class IntervalTimeManager(AbstractTimeManager, AbstractChecker):
-    def __init__(self, interval : timedelta, base_offset : timedelta = None, simulation_start_date : datetime = None, simulation_end_date : datetime = None) -> None:
+    def __init__(self, interval : timedelta, base_offset : timedelta = None, i_offset = None, simulation_start_date : datetime = None, simulation_end_date : datetime = None) -> None:
         self.interval = interval
         self.base_offset = base_offset
+        self.i_offset = i_offset
         self.simulation_start_date = simulation_start_date
         self.simulation_end_date = simulation_end_date
         self.__current_datetime = self.simulation_start_date
 
     def _random_offset(self):
         if self.base_offset is None: return timedelta(0)
-        n = int(self.interval/self.base_offset)
-        i = np.random.randint(low = 0, high= n)
+        if self.i_offset is not None: i = self.i_offset
+        else: i = np.random.randint(low = 0, high= int(self.interval/self.base_offset))
         return self.base_offset * i 
 
     async def reset(self, seed = None)->None:
