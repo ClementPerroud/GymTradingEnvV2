@@ -58,10 +58,11 @@ class InfosManager(AbstractRenderer):
             "portfolio_valuation" : float(portfolio_valuation.amount),
             "portfolio_valuation_asset" : portfolio_valuation.asset.name,
             **{f"portfolio_{asset}" : float(portfolio_per_asset[asset]) for asset in self.assets},
-            **{f"position_exposition_{asset}" : float(portfolio_exposition_per_asset[asset]) for asset in self.assets},
+            **{f"portfolio_exposition_{asset}" : float(portfolio_exposition_per_asset[asset]) for asset in self.assets},
             **{f"price_{pair}" : float(ticker_dict[pair].close.amount) for pair in self.pairs},
             "quote_asset" : self.quote_asset.name,
             "assets" : [asset.name for asset in [asset for asset in self.assets if asset != self.quote_asset]],
+            "pairs": [f"{pair}" for pair in self.pairs],
         }
 
         return date, infos

@@ -1,2 +1,3 @@
 from .renderer import AbstractRenderer
 from .performance_chart_renderer import PerformanceChartRenderer
+from .dashboard_render import DashboardRenderer
