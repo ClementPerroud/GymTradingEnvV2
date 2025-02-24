@@ -40,6 +40,18 @@ class DashboardRenderer(AbstractRenderer):
                 )
             ], style={'textAlign': 'center', 'margin': '20px'}),
 
+            # Data Range Picker
+            html.Div([
+                html.Label("Select Date Range: ", style={'marginRight': '10px'}),
+                dcc.DatePickerRange(
+                    id='date-range',
+                    display_format='DD/MM/YYYY',
+                    start_date=datetime.datetime(2020, 1, 1),
+                    end_date=datetime.datetime(2025, 12, 31),
+                    style={'display': 'inline-block', 'verticalAlign': 'middle'}
+                )
+            ], style={'textAlign': 'center', 'margin': '20px'}),
+
             dcc.Graph(
                 id='main-chart',
                 figure={},
@@ -84,8 +96,7 @@ class DashboardRenderer(AbstractRenderer):
             'rewards': [],
             'infos': {}
         }
-    async def render_episode(self):
-        await super().render_episode()
+    
     async def render_step(self, *args, **kwargs):
         """
         Called at each step of the simulation.
@@ -142,9 +153,11 @@ class DashboardRenderer(AbstractRenderer):
         @app.callback(
             Output('main-chart', 'figure'),
             Input('refresh-button', 'n_clicks'),
-            Input('episode-selector', 'value')
+            Input('episode-selector', 'value'),
+            Input('date-range', 'start_date'),
+            Input('date-range', 'end_date')
         )
-        def update_graph(_, selected_episode):
+        def update_graph(_, selected_episode, start_date, end_date):
             """
             Build the main chart using data from the selected episode.
             """
@@ -159,31 +172,54 @@ class DashboardRenderer(AbstractRenderer):
             expositions = data_dict['portfolio_expositions']
             prices = data_dict['prices']
 
+            # Convert all data into a DataFrame for easier filtering
+            df = pd.DataFrame({
+                'date': dates,
+                'valuation': valuations,
+                'exposition': expositions,
+                'price': prices
+            })
+
+            # Filter by date range if provided
+            if start_date is not None:
+                print(start_date, type(start_date))
+                start_date = pd.to_datetime(start_date, format = "ISO8601", utc = True)
+                df = df[df['date'] >= start_date]
+
+            if end_date is not None:
+                print(end_date, type(end_date))
+                end_date = pd.to_datetime(end_date, format = "ISO8601", utc = True)
+                df = df[df['date'] <= end_date]
+
+            # Sort by date (just in case)
+            df = df.sort_values('date')
+
             fig = go.Figure()
-            # 1) portfolio_valuation
+
+            # 1) Portfolio Valuation
             fig.add_trace(
                 go.Scatter(
-                    x=dates, 
-                    y=valuations, 
+                    x=df['date'], 
+                    y=df['valuation'], 
                     mode='lines+markers', 
                     name='Portfolio Valuation'
                 )
             )
-            # 2) position_exposition
+            # 2) Position Exposition
             fig.add_trace(
                 go.Scatter(
-                    x=dates, 
-                    y=expositions, 
+                    x=df['date'], 
+                    y=df['exposition'], 
                     mode='lines+markers', 
                     name='Position Exposition', 
                     yaxis='y2'
                 )
             )
-            # 3) price
+            # 3) Price
             fig.add_trace(
                 go.Scatter(
-                    x=dates, 
-                    y=prices, 
+                    x=df['date'], 
+                    y=df['price'], 
                     mode='lines+markers', 
                     name='Price', 
                     yaxis='y3'
@@ -202,13 +238,18 @@ class DashboardRenderer(AbstractRenderer):
                     title="Exposition",
                     title_font=dict(color="#ff7f0e"),
                     tickfont=dict(color="#ff7f0e"),
-                    anchor="x", overlaying="y", side="right"
+                    anchor="x", 
+                    overlaying="y", 
+                    side="right"
                 ),
                 yaxis3=dict(
                     title="Price",
                     title_font=dict(color="#2ca02c"),
                     tickfont=dict(color="#2ca02c"),
-                    anchor="free", overlaying="y", side="right", position=0.90
+                    anchor="free", 
+                    overlaying="y", 
+                    side="right", 
+                    position=0.90
                 ),
                 legend=dict(
                     x=0.02,
