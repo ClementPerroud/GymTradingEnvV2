@@ -9,7 +9,9 @@ import datetime
 from .renderer import AbstractRenderer
 
 class DashboardRenderer(AbstractRenderer):
-    def __init__(self) -> None:
+    def __init__(self, 
+            app_kwargs: dict = dict(host = "0.0.0.0", jupyter_mode="external", debug=True, port=8050, enable_host_checking = False)
+        )-> None:
         super().__init__()
 
         # Store episode data in a dictionary keyed by episode_index
@@ -59,7 +61,7 @@ class DashboardRenderer(AbstractRenderer):
         # Register callbacks
         self.callbacks(self.app)
 
-        self.app.run(host = "0.0.0.0", jupyter_mode="external", debug=True, port=8050, enable_host_checking = False)
+        self.app.run(**app_kwargs)
 
     async def reset(self, seed=None, **kwargs):
         """
@@ -79,9 +81,11 @@ class DashboardRenderer(AbstractRenderer):
             'portfolio_expositions': [],
             'portfolio_valuations': [],
             'prices': [],
-            'rewards': []
+            'rewards': [],
+            'infos': {}
         }
-
+    async def render_episode(self):
+        await super().render_episode()
     async def render_step(self, *args, **kwargs):
         """
         Called at each step of the simulation.
@@ -104,6 +108,8 @@ class DashboardRenderer(AbstractRenderer):
             infos[f'price_{pair}']
         )
         self.episodes_dict[self.current_episode]['rewards'].append(infos['reward'])
+
+        self.episodes_dict[self.current_episode]['infos'][date] = infos
 
     def callbacks(self, app):
 
@@ -237,7 +243,7 @@ class DashboardRenderer(AbstractRenderer):
 
             # It's possible that the environment's date keys are actual datetime objects
             # or strings. We'll attempt the direct lookup or do a small fallback.
-            row_dict = self.infos_manager.historical_infos.get(clicked_date, None)
+            row_dict = self.episodes_dict[selected_episode]['infos'].get(clicked_date, None)
             if row_dict is None: return html.Div([f"No data for this date: {clicked_date}"])
 
             # Build a nice HTML table
