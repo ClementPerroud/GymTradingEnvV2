@@ -1,23 +1,43 @@
 import dash
 from dash import dcc
 from dash import html
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 import plotly.graph_objects as go
 import pandas as pd
 import datetime
 
 from .renderer import AbstractRenderer
-# --------------------------------------------------------------------------
-# Sample DataFrame
-# --------------------------------------------------------------------------
 
 class DashboardRenderer(AbstractRenderer):
     def __init__(self) -> None:
+        super().__init__()
+
+        # Store episode data in a dictionary keyed by episode_index
+        # Each entry will have lists of 'dates', 'portfolio_expositions', etc.
+        self.episodes_dict = {}
+        self.current_episode = 0  # Will increment each time `reset` is called
 
         self.app = dash.Dash(__name__)
+
+        # App Layout
         self.app.layout = html.Div([
             html.H1("Trading/Portfolio Dashboard", style={'text-align': 'center'}),
-            html.Button('Refresh', id='refresh-button', n_clicks=0, style={'margin': '20px auto', 'display': 'block'}),
+
+            # Episode Selection + Refresh
+            html.Div([
+                html.Button(
+                    'Refresh', 
+                    id='refresh-button', 
+                    n_clicks=0, 
+                    style={'marginRight': '20px'}
+                ),
+                dcc.Dropdown(
+                    id='episode-selector',
+                    placeholder="Select Episode",
+                    style={'width': '200px', 'display': 'inline-block', 'verticalAlign': 'middle'}
+                )
+            ], style={'textAlign': 'center', 'margin': '20px'}),
+
             dcc.Graph(
                 id='main-chart',
                 figure={},
@@ -35,52 +55,134 @@ class DashboardRenderer(AbstractRenderer):
                 }
             )
         ])
-        self.dates = []
-        self.portfolio_expositions = []
-        self.portfolio_valuations = []
-        self.prices = []
-        self.rewards = []
+
+        # Register callbacks
         self.callbacks(self.app)
-        self.app.run(debug=True)
-        
-    async def reset(self, seed = None, **kwargs):
-        await super().reset(seed = seed, **kwargs)
+
+        self.app.run(host = "0.0.0.0", jupyter_mode="external", debug=True, port=8050, enable_host_checking = False)
+
+    async def reset(self, seed=None, **kwargs):
+        """
+        Called every time a new RL episode is started.
+        """
+        await super().reset(seed=seed, **kwargs)
+
         self.infos_manager = self.get_trading_env().infos_manager
-        self.time_manager  = self.get_trading_env().time_manager
-        
-        self.dates = []
-        self.portfolio_expositions = []
-        self.portfolio_valuations = []
-        self.prices = []
-        self.rewards = []
+        self.time_manager = self.get_trading_env().time_manager
+
+        # Increment current episode index
+        self.current_episode += 1
+
+        # Initialize new lists for storing data for this episode
+        self.episodes_dict[self.current_episode] = {
+            'dates': [],
+            'portfolio_expositions': [],
+            'portfolio_valuations': [],
+            'prices': [],
+            'rewards': []
+        }
 
     async def render_step(self, *args, **kwargs):
+        """
+        Called at each step of the simulation.
+        We store each step's data in self.episodes_dict[current_episode].
+        """
         date = await self.time_manager.get_current_datetime()
         infos = self.infos_manager.historical_infos[date]
-        
+
         asset = infos['assets'][0]
         pair = infos['pairs'][0]
-        self.dates.append(infos['date'])
-        self.portfolio_expositions.append(infos[f'portfolio_exposition_{asset}'])
-        self.portfolio_valuations.append(infos['portfolio_valuation'])
-        self.prices.append(infos[f'price_{pair}'])
-        self.rewards.append(infos['reward'])
 
+        self.episodes_dict[self.current_episode]['dates'].append(date)
+        self.episodes_dict[self.current_episode]['portfolio_expositions'].append(
+            infos[f'portfolio_exposition_{asset}']
+        )
+        self.episodes_dict[self.current_episode]['portfolio_valuations'].append(
+            infos['portfolio_valuation']
+        )
+        self.episodes_dict[self.current_episode]['prices'].append(
+            infos[f'price_{pair}']
+        )
+        self.episodes_dict[self.current_episode]['rewards'].append(infos['reward'])
 
     def callbacks(self, app):
+
+        # 1) Update the Episode Selector Dropdown Options whenever 'Refresh' is clicked
+        @app.callback(
+            Output('episode-selector', 'options'),
+            Output('episode-selector', 'value'),
+            Input('refresh-button', 'n_clicks'),
+            prevent_initial_call=False
+        )
+        def update_episode_dropdown(n_clicks):
+            """
+            Build the list of possible episodes from self.episodes_dict
+            and pick the newest episode as default.
+            """
+            if not self.episodes_dict:
+                # No episodes stored yet
+                return [], None
+
+            # Build options
+            options = [
+                {'label': f"Episode {ep}", 'value': ep}
+                for ep in sorted(self.episodes_dict.keys())
+            ]
+            # Default to the most recent episode
+            newest_episode = max(self.episodes_dict.keys())
+            return options, newest_episode
+
+        # 2) Update the Main Chart whenever 'Refresh' or selected Episode changes
         @app.callback(
             Output('main-chart', 'figure'),
-            Input('refresh-button', 'n_clicks')  # Just a dummy input to build the figure initially
+            Input('refresh-button', 'n_clicks'),
+            Input('episode-selector', 'value')
         )
-        def update_graph(_):
+        def update_graph(_, selected_episode):
+            """
+            Build the main chart using data from the selected episode.
+            """
+            if selected_episode is None or selected_episode not in self.episodes_dict:
+                return go.Figure()
+
+            data_dict = self.episodes_dict[selected_episode]
+
+            # Unpack
+            dates = data_dict['dates']
+            valuations = data_dict['portfolio_valuations']
+            expositions = data_dict['portfolio_expositions']
+            prices = data_dict['prices']
 
             fig = go.Figure()
             # 1) portfolio_valuation
-            fig.add_trace(go.Scatter(x=self.dates,y=self.portfolio_valuations,mode='lines+markers',name='Portfolio Valuation'))
-            # 2) position_exposition_BTC
-            fig.add_trace(go.Scatter(x=self.dates,y=self.portfolio_expositions,mode='lines+markers',name='Position Exposition', yaxis='y2'))
-            # 3) price_BTCUSDT
-            fig.add_trace(go.Scatter(x=self.dates,y=self.prices,mode='lines+markers',name='Price',yaxis='y3'))
+            fig.add_trace(
+                go.Scatter(
+                    x=dates, 
+                    y=valuations, 
+                    mode='lines+markers', 
+                    name='Portfolio Valuation'
+                )
+            )
+            # 2) position_exposition
+            fig.add_trace(
+                go.Scatter(
+                    x=dates, 
+                    y=expositions, 
+                    mode='lines+markers', 
+                    name='Position Exposition', 
+                    yaxis='y2'
+                )
+            )
+            # 3) price
+            fig.add_trace(
+                go.Scatter(
+                    x=dates, 
+                    y=prices, 
+                    mode='lines+markers', 
+                    name='Price', 
+                    yaxis='y3'
+                )
+            )
 
             # Create up to 3 y-axes for clarity:
             fig.update_layout(
@@ -108,41 +210,37 @@ class DashboardRenderer(AbstractRenderer):
                     bgcolor="rgba(255,255,255,0.6)"
                 ),
                 hovermode="x unified",
-                title="Portfolio / Positions / Price"
+                title=f"Portfolio / Positions / Price - Episode {selected_episode}"
             )
 
             return fig
 
+        # 3) Display the details of a clicked point
         @app.callback(
             Output('point-data', 'children'),
-            Input('main-chart', 'clickData')
+            Input('main-chart', 'clickData'),
+            State('episode-selector', 'value')
         )
-        def display_click_data(clickData):
+        def display_click_data(clickData, selected_episode):
             """
             Show the record details of the point the user clicked.
             If the user hasn't clicked anything, show a default message.
             """
-
-            if clickData is None:
+            if clickData is None or selected_episode not in self.episodes_dict:
                 return html.Div(["Click a point in the chart to see details."])
 
-            # Extract the x-value (which will be the date in our figure)
-            # The "points" list can contain multiple points if multiple traces share an x.
-            # We'll just grab the first for demonstration.
             point = clickData['points'][0]
-            clicked_date : datetime.datetime = point['x']
+            clicked_date = point['x']
+            clicked_date = pd.to_datetime(clicked_date, utc = True)
 
-            # For safety, convert to pandas Timestamp if necessary
-            # (Depending on how Dash returns date, it might be a str or datetime)
-            clicked_date = pd.to_datetime(clicked_date)
+            # Safely extract from the environment's stored infos
 
-            # Find the row in our df that matches the clicked date
-            # You can customize how you match; for example, if you have multiple rows
-            # with the same date, or times, you might want a more robust approach.
-            row_dict = self.infos_manager.historical_infos[clicked_date]
-            if len(row_dict) == 0:return html.Div(["No data for this date."])
+            # It's possible that the environment's date keys are actual datetime objects
+            # or strings. We'll attempt the direct lookup or do a small fallback.
+            row_dict = self.infos_manager.historical_infos.get(clicked_date, None)
+            if row_dict is None: return html.Div([f"No data for this date: {clicked_date}"])
 
-            # Build a nice HTML table or list
+            # Build a nice HTML table
             info_items = []
             for k, v in row_dict.items():
                 info_items.append(html.Tr([html.Td(str(k)), html.Td(str(v))]))
@@ -159,5 +257,3 @@ class DashboardRenderer(AbstractRenderer):
                 html.H3(f"Details for Date: {clicked_date}"),
                 table
             ])
-
-    
