@@ -2,11 +2,13 @@ import dash
 from dash import dcc, html
 from dash.dependencies import Input, Output, State
 import plotly.graph_objects as go
+import plotly
 import pandas as pd
 import datetime
 import numpy as np
 
 import dash_bootstrap_components as dbc
+import plotly.subplots
 
 from .renderer import AbstractRenderer
 
@@ -129,8 +131,7 @@ class DashboardRenderer(AbstractRenderer):
                     justify="center",
                     style={"marginBottom": "20px"}
                 ),
-
-                # ----- Main Chart -----
+                # ----- Main Charts -----
                 dbc.Row(
                     [
                         dbc.Col(
@@ -140,9 +141,9 @@ class DashboardRenderer(AbstractRenderer):
                                 children=[
                                     dcc.Graph(
                                         id="main-chart",
-                                        figure= {},
-                                        style={"height": "70vh"}
-                                    )
+                                        figure={},
+                                        style={"height": "75vh"}
+                                    ),
                                 ]
                             ),
                             width=12
@@ -150,7 +151,6 @@ class DashboardRenderer(AbstractRenderer):
                     ],
                     justify="center"
                 ),
-
                 # ----- Point Data Table -----
                 dbc.Row(
                     [
@@ -256,6 +256,7 @@ class DashboardRenderer(AbstractRenderer):
         # 2) Update the Main Chart whenever 'Refresh' or selected Episode changes
         @app.callback(
             Output("main-chart", "figure"),
+            # Output("exposition-chart", "figure"),
             Input("refresh-button", "n_clicks"),
             Input("episode-selector", "value"),
             Input("date-range", "start_date"),
@@ -263,7 +264,7 @@ class DashboardRenderer(AbstractRenderer):
         )
         def update_graph(_, selected_episode, start_date, end_date):
             """
-            Build the main chart using data from the selected episode.
+            Build the main charts using data from the selected episode.
             """
             if selected_episode is None or selected_episode not in self.episodes_dict:
                 return go.Figure()
@@ -272,46 +273,53 @@ class DashboardRenderer(AbstractRenderer):
 
             # Unpack
             dates = data_dict["dates"]
-            valuations = data_dict["portfolio_valuations"]
-            expositions = data_dict["portfolio_expositions"]
-            prices = data_dict["prices"]
-
+            valuations = np.array(data_dict["portfolio_valuations"])
+            expositions = np.array(data_dict["portfolio_expositions"])
+            prices = np.array(data_dict["prices"])
 
             # Filter by date range if provided
             index_start = 0
-            np_dates = np.array(dates, dtype = "datetime64[ns]")
+            np_dates = np.array(dates, dtype="datetime64[ns]")
             if start_date is not None:
-                start_date = pd.to_datetime(start_date, format ="ISO8601")
+                start_date = pd.to_datetime(start_date, format="ISO8601")
                 index_start = np.searchsorted(np_dates, np.datetime64(start_date))
 
             index_end = len(dates)
             if end_date is not None:
-                end_date = pd.to_datetime(end_date, format ="ISO8601")
+                end_date = pd.to_datetime(end_date, format="ISO8601")
                 index_end = np.searchsorted(np_dates, np.datetime64(end_date))
 
-            fig = go.Figure()
+            # Create the first figure for Portfolio Valuation and Price
+            fig = plotly.subplots.make_subplots(
+                rows=2, cols=1,
+                shared_xaxes=True, 
+                vertical_spacing=0.05, row_heights=[0.7, 0.3],
+                specs=[[{"secondary_y": False}], [{"secondary_y": False}]]
+            )
 
             # Add Valuation
             fig.add_trace(
                 go.Scattergl(
                     x=dates[index_start:index_end],
-                    y=valuations[index_start:index_end],
+                    y= valuations[index_start:index_end] * (prices[index_start] / valuations[index_start]),
+                    customdata= valuations[index_start:index_end],
+                    hovertemplate="Portfolio: %{customdata}<extra></extra>",
                     mode="lines",
                     name="Portfolio Valuation",
                     line=dict(color="#1f77b4", width=2)
+                ), row = 1, col = 1
+            )
+
+
+            fig.update_layout(
+                yaxis1=dict(
+                    title="<b>Portfolio Valuation</b> vs <b>Price</b>",
+                    title_font=dict(color="#1f77b4"),
+                    tickfont=dict(color="#1f77b4"),
+                    type="log",
                 )
             )
-            # Add Position Exposition
-            fig.add_trace(
-                go.Scattergl(
-                    x=dates[index_start:index_end],
-                    y=expositions[index_start:index_end],
-                    mode="lines",
-                    name="Position Exposition",
-                    yaxis="y2",
-                    line=dict(color="#ff7f0e", width=2)
-                )
-            )
+
             # Add Price
             fig.add_trace(
                 go.Scattergl(
@@ -319,35 +327,38 @@ class DashboardRenderer(AbstractRenderer):
                     y=prices[index_start:index_end],
                     mode="lines",
                     name="Price",
-                    yaxis="y3",
-                    line=dict(color="#2ca02c", width=2)
-                )
+                    line=dict(color="#2ca02c", width=2),
+                ), row = 1, col = 1
             )
 
-            # Create up to 3 y-axes
+
+            # fig.update_layout(
+            #     yaxis2=dict(
+            #         title="Price evolution",
+            #         title_font=dict(color="#1f77b4"),
+            #         tickfont=dict(color="#1f77b4"),
+            #         type="log",
+            #         range = (range_min_price, range_max_price),
+            #     )
+            # )
+
+            
+
+            # Add Position Exposition
+            fig.add_trace(
+                go.Scattergl(
+                    x=dates[index_start:index_end],
+                    y=expositions[index_start:index_end],
+                    mode="lines",
+                    name="Position Exposition",
+                    line=dict(color="#ff7f0e", width=2)
+                ), row = 2, col = 1
+            )
+
+            # fig.update_yaxes(type="linear", row=2, col=1)
             fig.update_layout(
-                xaxis=dict(domain=[0, 0.85]),
-                yaxis=dict(
-                    title="Portfolio Valuation",
-                    title_font=dict(color="#1f77b4"),
-                    tickfont=dict(color="#1f77b4"),
-                ),
-                yaxis2=dict(
-                    title="Exposition",
-                    title_font=dict(color="#ff7f0e"),
-                    tickfont=dict(color="#ff7f0e"),
-                    anchor="x",
-                    overlaying="y",
-                    side="right"
-                ),
-                yaxis3=dict(
-                    title="Price",
-                    title_font=dict(color="#2ca02c"),
-                    tickfont=dict(color="#2ca02c"),
-                    anchor="free",
-                    overlaying="y",
-                    side="right",
-                    position=0.90
+                yaxis2= dict(
+                    title = "Portfolio Exposition",
                 ),
                 legend=dict(
                     x=0.02,
@@ -355,7 +366,9 @@ class DashboardRenderer(AbstractRenderer):
                     bgcolor="rgba(255,255,255,0.6)"
                 ),
                 hovermode="x unified",
-                title=f"Portfolio / Positions / Price - Episode {selected_episode}",
+                plot_bgcolor='white',  # Set the plot background color to white
+                paper_bgcolor='white'  # Set the paper (overall figure) background color to white
+
             )
 
             return fig

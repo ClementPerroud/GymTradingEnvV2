@@ -21,7 +21,7 @@ class ExchangeManager(AbstractExchange):
     async def reset(self, seed = None):
         # Reset cached memory
         self.get_available_pairs.cache_clear()
-        self.__lru_get_portfolio.cache_clear()
+        # self.__lru_get_portfolio.cache_clear()
         self.__lru_get_quotation.cache_clear()
         # self.__lru_get_ticker.cache_clear()
         
@@ -56,7 +56,7 @@ class ExchangeManager(AbstractExchange):
         the portfolio did not change (= when no new trade occurs)"""
         return await self.__lru_get_portfolio(nb_orders=self.nb_orders)
     
-    @alru_cache(maxsize = 100)
+    # @alru_cache(maxsize = 100)
     async def __lru_get_portfolio(self, nb_orders):
         return await self.exchange.get_portfolio()
 
