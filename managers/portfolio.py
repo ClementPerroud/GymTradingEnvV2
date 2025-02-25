@@ -14,13 +14,13 @@ from ..utils.async_lru import alru_cache
 class PortfolioManager(AbstractEnvironmentElement):
     async def reset(self, seed = None):
         self.exchange_manager = self.get_trading_env().exchange_manager
-        self.position_valuation.cache_clear()
-        self.__valuations.cache_clear()
-        self.valuation.cache_clear()
-        self.exposition.cache_clear()
+        # self.position_valuation.cache_clear()
+        # self.__valuations.cache_clear()
+        # self.valuation.cache_clear()
+        # self.exposition.cache_clear()
 
 
-    @alru_cache(maxsize=128)
+    # @alru_cache(maxsize=128)
     async def position_valuation(self, position : Value, date : datetime, quote_asset : Asset) -> Value:
         if position.asset == quote_asset: return position
         return position * await self.exchange_manager.get_quotation(
@@ -28,7 +28,7 @@ class PortfolioManager(AbstractEnvironmentElement):
             date= date
         )
 
-    @alru_cache(maxsize=128)
+    # @alru_cache(maxsize=128)
     async def __valuations(self, portfolio : Portfolio, date : datetime, quote_asset : Asset) -> Dict[Asset, Value]:
         assets, valuation_tasks = [], []
         for position in portfolio.get_positions():
@@ -37,7 +37,7 @@ class PortfolioManager(AbstractEnvironmentElement):
         valuations = await self.gather(*valuation_tasks)
         return dict(zip(assets, valuations))
     
-    @alru_cache(maxsize=128)
+    # @alru_cache(maxsize=128)
     async def valuation(self, portfolio : Portfolio, date : datetime, quote_asset : Asset, **kwargs) -> Value:
         valuations = await self.__valuations(portfolio = portfolio, date= date, quote_asset= quote_asset)
         _sum = Value(Decimal('0'), quote_asset)
@@ -46,7 +46,7 @@ class PortfolioManager(AbstractEnvironmentElement):
         return _sum
     
     
-    @alru_cache(maxsize=128)
+    # @alru_cache(maxsize=128)
     async def exposition(self, portfolio : Portfolio, date : datetime, quote_asset : Asset) -> PortfolioExposition:
         valuations = await self.__valuations(portfolio= portfolio, date=date, quote_asset= quote_asset)
         total_valuation = Value(Decimal('0'), quote_asset)

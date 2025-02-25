@@ -548,13 +548,20 @@ class MultiEnvDashboard:
                 alpha_str = f"{alpha*100:.2f}%"
 
             # Build the chart
-            fig = plotly.subplots.make_subplots(
-                rows=2, cols=1,
-                shared_xaxes=True,
-                vertical_spacing=0.05,
-                row_heights=[0.7, 0.3],
-                specs=[[{"secondary_y": False}], [{"secondary_y": False}]]
-            )
+            # fig = plotly.subplots.make_subplots(
+            #     rows=2, cols=1,
+            #     shared_xaxes=True,
+            #     vertical_spacing=0.05,
+            #     row_heights=[0.7, 0.3],
+            #     specs=[[{"secondary_y": False}], [{"secondary_y": False}]]
+            # )
+            layout = dict(
+                hoversubplots="axis",
+                title=dict(text="Stock Price Changes"),
+                hovermode="x",
+                grid=dict(rows=2, columns=1)
+                )
+            data = []
 
             if len(dates_range) > 0:
                 # Scale portfolio to match price shape
@@ -563,43 +570,49 @@ class MultiEnvDashboard:
                     scale_factor = prices_range[0] / vals_range[0]
 
                 # Plot scaled portfolio
-                fig.add_trace(
+                data.append(
                     go.Scattergl(
                         x=dates_range,
                         y=vals_range * scale_factor,
+                        yaxis= "y",
                         customdata=vals_range,
                         hovertemplate="Portfolio: %{customdata:.2f}<extra></extra>",
                         mode="lines",
                         name="Portfolio (scaled)",
                         line=dict(color="#1f77b4", width=2),
-                    ), row=1, col=1
+                        
+                    )#, row=1, col=1
                 )
                 # Plot price
-                fig.add_trace(
+                data.append(
                     go.Scattergl(
                         x=dates_range,
                         y=prices_range,
+                        yaxis = "y",
                         mode="lines",
                         name="Price",
                         line=dict(color="#2ca02c", width=2),
-                    ), row=1, col=1
+                    )#, row=1, col=1
                 )
                 # Plot position exposition
-                fig.add_trace(
+                data.append(
                     go.Scattergl(
                         x=dates_range,
                         y=expo_range,
+                        yaxis = "y2",
                         mode="lines",
                         name="Exposition",
                         line=dict(color="#ff7f0e", width=2),
-                    ), row=2, col=1
+                    )#, row=2, col=1
                 )
+            fig = go.Figure(data=data, layout=layout)
 
             fig.update_layout(
-                yaxis1=dict(title="<b>Valuation & Price (log scale)</b>", type="log"),
-                yaxis2=dict(title="Portfolio Exposition"),
+                yaxis1=dict(title="<b>Valuation & Price (log scale)</b>", type="log", domain=[0.2, 1]),
+                yaxis2=dict(title="Portfolio Exposition", domain = [0, 0.2]),
                 legend=dict(x=0.02, y=0.98, bgcolor="rgba(255,255,255,0.6)"),
                 hovermode="x unified",
+                hoversubplots="axis",
                 plot_bgcolor="white",
                 paper_bgcolor="white"
             )

@@ -1,6 +1,5 @@
 from decimal import Decimal
 from datetime import datetime, timedelta
-from copy import deepcopy
 from typing import List, Dict
 
 from ..core import Asset, Pair, Quotation, Portfolio, Value
@@ -18,17 +17,17 @@ class SimulationExchange(AbstractExchange):
     def __init__(self,
                  initial_portfolio : Portfolio, 
                  pair_simulations : Dict[Pair, AbstractPairSimulation], 
-                 trading_fees_pct = Decimal('0.001'),# Binance fees 0.1%
+                 trading_fees_pct = 0.001,# Binance fees 0.1%
                  asset_yearly_borrowing_interest : Dict[Asset, Decimal] = {}
         ):
         self.pair_simulations = pair_simulations
         self.initial_portfolio = initial_portfolio
         self.asset_yearly_borrowing_interest = asset_yearly_borrowing_interest
-        self.trading_fees_ratio = Decimal('1') - trading_fees_pct
+        self.trading_fees_ratio = 1 - trading_fees_pct
 
     async def reset(self, seed = None):
         await super().reset(seed = seed)
-        self.portfolio = deepcopy(self.initial_portfolio)
+        self.portfolio : Portfolio = self.initial_portfolio.copy()
         self.time_manager : AbstractTimeManager = self.get_trading_env().time_manager
 
     async def forward(self, date: datetime, seed=None):
@@ -58,17 +57,17 @@ class SimulationExchange(AbstractExchange):
             status_code = 200,
             date_open= await self.time_manager.get_historical_datetime(step_back=1, relative_date= date),
             date_close= date,
-            open = Quotation(Decimal(data["open"]), pair),
-            high = Quotation(Decimal(data["high"]), pair),
-            low = Quotation(Decimal(data["low"]), pair),
-            close = Quotation(Decimal(data["close"]), pair),
-            volume = Value(Decimal(data["volume"]), pair.asset),
-            price = Quotation(Decimal(data["close"]), pair),
+            open = Quotation(data["open"], pair),
+            high = Quotation(data["high"], pair),
+            low = Quotation(data["low"], pair),
+            close = Quotation(data["close"], pair),
+            volume = Value(data["volume"], pair.asset),
+            price = Quotation(data["close"], pair),
         )
 
     
     async def get_portfolio(self) -> Portfolio:
-        return deepcopy(self.portfolio)
+        return self.portfolio.copy()
 
     async def market_order(self, 
             pair : Pair, 
@@ -107,7 +106,7 @@ class SimulationExchange(AbstractExchange):
         quantity_counterpart= quantity * price # unit : (asset) * (counterpart/ asset) = asset
 
         # Handle fees
-        if quantity_asset.amount > Decimal('0') : # As we want to BUY, we need to sell more to equilibrate fees
+        if quantity_asset.amount > 0 : # As we want to BUY, we need to sell more to equilibrate fees
             post_fees_quantity_counterpart= quantity_counterpart/ self.trading_fees_ratio
         else : # As we want to SELL, we need to buy less to equilibrate fees
             post_fees_quantity_counterpart= quantity_counterpart* self.trading_fees_ratio
