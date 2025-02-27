@@ -1,6 +1,6 @@
 import dash
 from dash import dcc, html
-from dash.dependencies import Input, Output, State
+from dash.dependencies import Input, Output, State, ALL
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
 import plotly.subplots
@@ -80,6 +80,7 @@ class MultiEnvDashboard:
                 "portfolio_expositions": [],
                 "prices": [],
                 "rewards": [],
+                "trainables" : [],
                 "infos": {},
                 "summary_metrics": {}
             }
@@ -101,7 +102,9 @@ class MultiEnvDashboard:
         self.data[key]["portfolio_expositions"].append(infos.get(f"portfolio_exposition_{asset}", 0.0))
         self.data[key]["prices"].append(infos.get(f"price_{pair}", 0.0))
         self.data[key]["rewards"].append(infos.get("reward", 0.0))
+        self.data[key]["trainables"].append(infos.get("trainable", False))
         self.data[key]["infos"][date] = infos
+
 
     def finalize_episode(self, env_name: str, episode_number: int):
         """
@@ -323,7 +326,7 @@ class MultiEnvDashboard:
                                 ]),
                                 style=card_style
                             ),
-                            width=3, xs=12, sm=6, md=3
+                            width=2, xs=12, sm=6, md=2
                         ),
                         dbc.Col(
                             dbc.Card(
@@ -333,7 +336,7 @@ class MultiEnvDashboard:
                                 ]),
                                 style=card_style
                             ),
-                            width=3, xs=12, sm=6, md=3
+                            width=2, xs=12, sm=6, md=2
                         ),
                         dbc.Col(
                             dbc.Card(
@@ -343,7 +346,7 @@ class MultiEnvDashboard:
                                 ]),
                                 style=card_style
                             ),
-                            width=3, xs=12, sm=6, md=3
+                            width=2, xs=12, sm=6, md=2
                         ),
                         dbc.Col(
                             dbc.Card(
@@ -353,7 +356,17 @@ class MultiEnvDashboard:
                                 ]),
                                 style=card_style
                             ),
-                            width=3, xs=12, sm=6, md=3
+                            width=2, xs=12, sm=6, md=2
+                        ),
+                        dbc.Col(
+                            dbc.Card(
+                                dbc.CardBody([
+                                    html.H5("Rewards", className="card-title"),
+                                    html.H2(id="rewards-card", className="card-text")
+                                ]),
+                                style=card_style
+                            ),
+                            width=2, xs=12, sm=6, md=2
                         ),
                     ],
                     justify="center",
@@ -366,7 +379,7 @@ class MultiEnvDashboard:
                         dbc.Card(
                             body=True,
                             children=[
-                                dcc.Graph(id="main-chart", figure={}, style={"height": "75vh"})
+                                dcc.Graph(id = {"type": "graph", "index":"main-chart"}, figure={}, style={"height": "75vh"})
                             ],
                             style=card_style
                         ),
@@ -451,53 +464,69 @@ class MultiEnvDashboard:
                 )
             else:
                 # 404
-                return dbc.Alert("404 - Page not found", color="danger", style={"marginTop":"50px"})
+                return dbc.Alert("404 - Page not found", color="danger", style={"marginTop":"50px"})            
 
-
+        
         # 2) Build the main chart + metrics
         @self.app.callback(
             [
-                Output("main-chart", "figure"),
+                Output({"type": "graph", "index":"main-chart"}, "figure"),
                 Output("annual-return-card", "children"),
                 Output("annual-market-return-card", "children"),
                 Output("sharpe-card", "children"),
                 Output("alpha-card", "children"),
+                Output("rewards-card", "children"),
             ],
             [
                 Input("date-range", "start_date"),
                 Input("date-range", "end_date"),
-                Input("detail-store", "data")
+                Input("detail-store", "data"),
+                Input({'type': 'graph', 'index': ALL}, 'relayoutData')
             ]
         )
-        def update_chart(start_date, end_date, detail_store):
+        def update_chart(start_date, end_date, detail_store, relayoutData):
             """
             This is triggered on the detail page. 
             We'll slice the data by date range and compute the metrics on that slice.
             """
+            if len(relayoutData) > 0:
+                for relayout in relayoutData:
+                    if isinstance(relayout, dict):
+                        if "xaxis.range[0]" in relayout:
+                            start_date = relayout["xaxis.range[0]"]
+                        if "xaxis.range[1]" in relayout:
+                            end_date = relayout["xaxis.range[1]"]
+            
             fig = go.Figure()
             ann_ret_str = "N/A"
             mkt_ret_str = "N/A"
             sharpe_str  = "N/A"
             alpha_str   = "N/A"
+            rewards_str   = "N/A"
 
             if not detail_store:
-                return fig, ann_ret_str, mkt_ret_str, sharpe_str, alpha_str
+                return fig, ann_ret_str, mkt_ret_str, sharpe_str, alpha_str, rewards_str
 
             env_name = detail_store.get("env_name", None)
             ep_id = detail_store.get("ep_id", None)
             if (env_name, ep_id) not in self.data:
-                return fig, ann_ret_str, mkt_ret_str, sharpe_str, alpha_str
+                return fig, ann_ret_str, mkt_ret_str, sharpe_str, alpha_str, rewards_str
 
             entry = self.data[(env_name, ep_id)]
             dates = entry["dates"]
             if not dates:
-                return fig, ann_ret_str, mkt_ret_str, sharpe_str, alpha_str
+                return fig, ann_ret_str, mkt_ret_str, sharpe_str, alpha_str, rewards_str
 
             # Convert
             valuations = np.array(entry["portfolio_valuations"], dtype=float)
             expositions= np.array(entry["portfolio_expositions"], dtype=float)
             prices     = np.array(entry["prices"], dtype=float)
+            trainables = np.array(entry["trainables"], dtype=float)
             np_dates   = np.array(dates, dtype="datetime64[ns]")
+            rewards    = np.array(entry["rewards"], dtype=float)
+
+
+            sma_rewards= pd.Series(rewards).rolling(window = 20, min_periods = 1).mean().values
 
             # Filter by date range
             index_start = 0
@@ -510,13 +539,15 @@ class MultiEnvDashboard:
                 index_end = np.searchsorted(np_dates, np.datetime64(e))
 
             if index_end <= index_start:
-                return fig, ann_ret_str, mkt_ret_str, sharpe_str, alpha_str
+                return fig, ann_ret_str, mkt_ret_str, sharpe_str, alpha_str, rewards_str
 
             # Slice
             dates_range = dates[index_start:index_end]
             vals_range  = valuations[index_start:index_end]
             expo_range  = expositions[index_start:index_end]
             prices_range= prices[index_start:index_end]
+            rewards_range= rewards[index_start:index_end]
+            trainables_range = trainables[index_start:index_end]
 
             if len(vals_range) > 1 and vals_range[0] != 0:
                 initial_v = vals_range[0]
@@ -547,6 +578,56 @@ class MultiEnvDashboard:
                 alpha = ann_ret - ann_mkt
                 alpha_str = f"{alpha*100:.2f}%"
 
+                rewards_str = f"{rewards_range.sum():.2f}"
+
+                # Compute not trainable grey area
+                gray_shapes = []
+                in_false_segment = None  # Will store the index where a false-segment began
+
+                for i in range(len(dates_range)):
+                    if not trainables_range[i] and in_false_segment is None:
+                        # We just entered a "False" region
+                        in_false_segment = i
+                    elif trainables_range[i] and in_false_segment is not None:
+                        # We just ended a "False" region. Make a shape from in_false_segment -> i-1
+                        start_date = dates_range[in_false_segment]
+                        end_date   = dates_range[i]  # or i-1, depending on how you want the boundary
+
+                        gray_shapes.append(
+                            dict(
+                                type="rect",
+                                xref="x",
+                                yref="paper",    # so the shape spans the entire vertical range
+                                x0=start_date,
+                                x1=end_date,
+                                y0=0, y1=1,
+                                fillcolor="gray",
+                                opacity=0.2,
+                                layer="below",
+                                line_width=0
+                            )
+                        )
+                        in_false_segment = None
+
+                # If our array ends while still in a false segment, close that segment now:
+                if in_false_segment is not None:
+                    start_date = dates_range[in_false_segment]
+                    end_date   = dates_range[-1]
+                    gray_shapes.append(
+                        dict(
+                            type="rect",
+                            xref="x",
+                            yref="paper",
+                            x0=start_date,
+                            x1=end_date,
+                            y0=0, y1=1,
+                            fillcolor="gray",
+                            opacity=0.2,
+                            layer="below",
+                            line_width=0
+                        )
+    )
+
             # Build the chart
             # fig = plotly.subplots.make_subplots(
             #     rows=2, cols=1,
@@ -555,12 +636,6 @@ class MultiEnvDashboard:
             #     row_heights=[0.7, 0.3],
             #     specs=[[{"secondary_y": False}], [{"secondary_y": False}]]
             # )
-            layout = dict(
-                hoversubplots="axis",
-                title=dict(text="Stock Price Changes"),
-                hovermode="x",
-                grid=dict(rows=2, columns=1)
-                )
             data = []
 
             if len(dates_range) > 0:
@@ -574,25 +649,25 @@ class MultiEnvDashboard:
                     go.Scattergl(
                         x=dates_range,
                         y=vals_range * scale_factor,
-                        yaxis= "y",
+                        yaxis= "y3",
                         customdata=vals_range,
                         hovertemplate="Portfolio: %{customdata:.2f}<extra></extra>",
                         mode="lines",
                         name="Portfolio (scaled)",
                         line=dict(color="#1f77b4", width=2),
                         
-                    )#, row=1, col=1
+                    )
                 )
                 # Plot price
                 data.append(
                     go.Scattergl(
                         x=dates_range,
                         y=prices_range,
-                        yaxis = "y",
+                        yaxis = "y3",
                         mode="lines",
                         name="Price",
                         line=dict(color="#2ca02c", width=2),
-                    )#, row=1, col=1
+                    )
                 )
                 # Plot position exposition
                 data.append(
@@ -603,26 +678,41 @@ class MultiEnvDashboard:
                         mode="lines",
                         name="Exposition",
                         line=dict(color="#ff7f0e", width=2),
-                    )#, row=2, col=1
+                    )
                 )
-            fig = go.Figure(data=data, layout=layout)
+                data.append(
+                    go.Scattergl(
+                        x=dates_range,
+                        y=rewards_range,
+                        yaxis = "y1",
+                        mode="lines",
+                        name="Reward",
+                        line=dict(color="#7f00ff", width=2),
+                    )
+                )
+            fig = go.Figure(data=data)
 
             fig.update_layout(
-                yaxis1=dict(title="<b>Valuation & Price (log scale)</b>", type="log", domain=[0.2, 1]),
-                yaxis2=dict(title="Portfolio Exposition", domain = [0, 0.2]),
+                yaxis3=dict(title="<b>Valuation & Price (log scale)</b>", type="log", domain=[0.3, 1]),
+                yaxis2=dict(title="Exposition", domain = [0.15, 0.30]),
+                yaxis1=dict(title="Reward", domain = [0, 0.15]),
                 legend=dict(x=0.02, y=0.98, bgcolor="rgba(255,255,255,0.6)"),
                 hovermode="x unified",
                 hoversubplots="axis",
                 plot_bgcolor="white",
-                paper_bgcolor="white"
+                paper_bgcolor="white",
+                shapes=gray_shapes
             )
+            fig.update_xaxes(showgrid=False)
+            fig.update_yaxes(showgrid=False)
 
-            return fig, ann_ret_str, mkt_ret_str, sharpe_str, alpha_str
+            return fig, ann_ret_str, mkt_ret_str, sharpe_str, alpha_str, rewards_str
+
 
         # 3) Display the point data table
         @self.app.callback(
             Output("point-data", "children"),
-            Input("main-chart", "clickData"),
+            Input({"type": "graph", "index":"main-chart"}, "clickData"),
             State("detail-store", "data")
         )
         def display_click_data(clickData, detail_store):
@@ -707,6 +797,7 @@ class DashboardRenderer(AbstractRenderer):
         new_infos["terminated"] = terminated
         new_infos["truncated"] = truncated
         new_infos["obs"] = obs
+        new_infos["trainable"] = infos["trainable"]
 
         # Store in the manager
         self.dashboard_manager.store_step(
