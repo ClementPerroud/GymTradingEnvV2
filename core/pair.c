@@ -5,7 +5,7 @@
     "distutils": {
         "name": "gym_trading_env2.core.pair",
         "sources": [
-            "./gym_trading_env2/core/pair.pyx"
+            "gym_trading_env2/core/pair.pyx"
         ]
     },
     "module_name": "gym_trading_env2.core.pair"
@@ -1479,9 +1479,9 @@ static const char *__pyx_filename;
 /* #### Code section: filename_table ### */
 
 static const char *__pyx_f[] = {
-  "gym_trading_env2\\\\core\\\\pair.pyx",
+  "gym_trading_env2/core/pair.pyx",
   "<stringsource>",
-  "gym_trading_env2\\\\core\\\\asset.pxd",
+  "gym_trading_env2/core/asset.pxd",
 };
 /* #### Code section: utility_code_proto_before_types ### */
 /* ForceInitThreads.proto */
@@ -2240,7 +2240,7 @@ static const char __pyx_k_cline_in_traceback[] = "cline_in_traceback";
 static const char __pyx_k_Pair___reduce_cython[] = "Pair.__reduce_cython__";
 static const char __pyx_k_Pair___setstate_cython[] = "Pair.__setstate_cython__";
 static const char __pyx_k_gym_trading_env2_core_pair[] = "gym_trading_env2.core.pair";
-static const char __pyx_k_gym_trading_env2_core_pair_pyx[] = "gym_trading_env2\\core\\pair.pyx";
+static const char __pyx_k_gym_trading_env2_core_pair_pyx[] = "gym_trading_env2/core/pair.pyx";
 static const char __pyx_k_no_default___reduce___due_to_non[] = "no default __reduce__ due to non-trivial __cinit__";
 static const char __pyx_k_quote_asset_must_differ_from_ass[] = "quote_asset must differ from asset ";
 /* #### Code section: decls ### */

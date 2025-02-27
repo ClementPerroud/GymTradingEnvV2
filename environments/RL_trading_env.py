@@ -21,6 +21,7 @@ from ..utils.speed_analyser import SpeedAnalyser, astep_timer
 class RLTradingEnv(AbstractTradingEnv):
     instances = {}
     def __init__(self,
+            name : str,
             mode : Mode,
             time_manager : AbstractTimeManager,
             exchange_manager : AbstractExchange,
@@ -32,7 +33,7 @@ class RLTradingEnv(AbstractTradingEnv):
             renderers : List[AbstractRenderer] = [],
         ) -> None:
         
-        super().__init__(mode = mode, time_manager= time_manager, exchange_manager= exchange_manager, infos_manager = infos_manager, checkers= checkers, renderers = renderers)
+        super().__init__(name = name, mode = mode, time_manager= time_manager, exchange_manager= exchange_manager, infos_manager = infos_manager, checkers= checkers, renderers = renderers)
 
         self.action_manager = action_manager
         self.observer = observer

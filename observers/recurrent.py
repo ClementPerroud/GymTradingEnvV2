@@ -4,6 +4,7 @@ import asyncio
 from datetime import datetime, timedelta
 from gymnasium.spaces import Space, Box, Sequence
 from collections import OrderedDict
+from copy import deepcopy
 
 from ..time_managers import AbstractTimeManager
 from ..utils.speed_analyser import astep_timer
@@ -114,7 +115,7 @@ class RecurrentObserver(AbstractObserver):
             sub_tasks = [self.sub_observer.__get_obs__(date=d) for d in missing_dates]
             new_obs = await self.gather(*sub_tasks)
             # Merge new observations into memory
-            for d, obs in zip(missing_dates, new_obs): self.memory[d] = obs
+            for d, obs in zip(missing_dates, new_obs): self.memory[d] = deepcopy(obs)
 
         # 4) Build result in ascending chronological order
         #    (Because steps_back started from farthest in the past -> to present)
@@ -126,9 +127,8 @@ class RecurrentObserver(AbstractObserver):
 
         self.last_window_dates = window_dates
 
-        # 6) Return as a numpy array of shape (window, ...)
+        # 6) Return a list of dict
         return results
-        # return [np.array(results)
 
     async def reccurent_check(self, infos):
         date = await self.time_manager.get_current_datetime()

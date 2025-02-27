@@ -1,10 +1,10 @@
-def class_deep_search(condition, element : object, visited = None, result = None):
+def class_deep_search(condition, element : object, excluded_classes= tuple(), visited = None, result = None, deepth = 0):
     if result is None: result = set([])
     if visited is None: visited = set([])
     
     element_id = id(element)
 
-    if element_id in visited:
+    if element_id in visited or isinstance(element, excluded_classes):
         return result
 
     visited.add(element_id)
@@ -16,7 +16,8 @@ def class_deep_search(condition, element : object, visited = None, result = None
         result.add(element)
     
     for child_element in get_iterator(element=element):
-        class_deep_search(condition= condition, element= child_element, result= result, visited= visited)
+        # print( "".join(["\t"]*deepth) + str(element) )
+        class_deep_search(condition= condition, element= child_element, result= result, visited= visited, deepth = deepth +1)
     return result
 
 import numbers
@@ -26,7 +27,8 @@ def get_iterator(element):
     if isinstance(element, numbers.Number)\
         or isinstance(element, np.ndarray)\
         or isinstance(element, pd.DataFrame)\
-        or isinstance(element, pd.Series):
+        or isinstance(element, pd.Series)\
+        or isinstance(element, StopSearch):
         return []
     if isinstance(element, list):
         if len(element)> 1_000: return []
@@ -37,3 +39,6 @@ def get_iterator(element):
     if hasattr(element, "__dict__"):
         return element.__dict__.values()
     return []
+
+class StopSearch:
+    pass

@@ -42,7 +42,7 @@ class ExpositionObserver(AbstractObserver):
 
             result[f"exposition_{i}"] = pair_exposition 
 
-        return result
+        return result.copy()
     
     # async def transform(self, obs):
     #     return 

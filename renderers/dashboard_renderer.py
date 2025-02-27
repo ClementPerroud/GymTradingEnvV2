@@ -756,8 +756,8 @@ class MultiEnvDashboard:
 # --------------------------------------------------------------------------------
 # 2) The PER-ENV RENDERER
 # --------------------------------------------------------------------------------
-
-class DashboardRenderer(AbstractRenderer):
+from ..utils.class_searcher import StopSearch
+class DashboardRenderer(AbstractRenderer, StopSearch):
     """
     Renderer attached to a single environment. 
     Delegates all data to MultiEnvDashboard for storage and display.

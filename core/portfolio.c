@@ -6,7 +6,7 @@
         "depends": [],
         "name": "gym_trading_env2.core.portfolio",
         "sources": [
-            "./gym_trading_env2/core/portfolio.pyx"
+            "gym_trading_env2/core/portfolio.pyx"
         ]
     },
     "module_name": "gym_trading_env2.core.portfolio"
@@ -1481,9 +1481,9 @@ static const char *__pyx_filename;
 /* #### Code section: filename_table ### */
 
 static const char *__pyx_f[] = {
-  "gym_trading_env2\\\\core\\\\portfolio.pyx",
+  "gym_trading_env2/core/portfolio.pyx",
   "<stringsource>",
-  "gym_trading_env2\\\\core\\\\value.pxd",
+  "gym_trading_env2/core/value.pxd",
 };
 /* #### Code section: utility_code_proto_before_types ### */
 /* ForceInitThreads.proto */
@@ -2641,7 +2641,7 @@ static const char __pyx_k_Portfolio_add_positions[] = "Portfolio.add_positions";
 static const char __pyx_k_Portfolio_get_positions[] = "Portfolio.get_positions";
 static const char __pyx_k_Portfolio___reduce_cython[] = "Portfolio.__reduce_cython__";
 static const char __pyx_k_Portfolio___setstate_cython[] = "Portfolio.__setstate_cython__";
-static const char __pyx_k_gym_trading_env2_core_portfolio[] = "gym_trading_env2\\core\\portfolio.pyx";
+static const char __pyx_k_gym_trading_env2_core_portfolio[] = "gym_trading_env2/core/portfolio.pyx";
 static const char __pyx_k_Expositions_must_add_up_to_1_got[] = "Expositions must add up to 1 (got ";
 static const char __pyx_k_PortfolioExposition___reduce_cyt[] = "PortfolioExposition.__reduce_cython__";
 static const char __pyx_k_PortfolioExposition___setstate_c[] = "PortfolioExposition.__setstate_cython__";

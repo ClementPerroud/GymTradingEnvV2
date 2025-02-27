@@ -9,11 +9,11 @@ setup(
     # package_dir= ["core"],
     ext_modules=cythonize(
         [
-            "core/asset.pyx",
-            "core/pair.pyx",
-            "core/value.pyx",
-            "core/quotation.pyx",
-            "core/portfolio.pyx",
+            "gym_trading_env2/core/asset.pyx",
+            "gym_trading_env2/core/pair.pyx",
+            "gym_trading_env2/core/value.pyx",
+            "gym_trading_env2/core/quotation.pyx",
+            "gym_trading_env2/core/portfolio.pyx",
         ],
         language_level=3
     ),

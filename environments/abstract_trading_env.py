@@ -15,7 +15,8 @@ from ..infos_manager import InfosManager
 
 class AbstractTradingEnv(gym.Env, AbstractChecker, AbstractEnvironmentElement, ABC):
     instances = {}
-    def __init__(self, mode : Mode, time_manager : AbstractTimeManager, exchange_manager : AbstractExchange, checkers : List[AbstractChecker], infos_manager : InfosManager, renderers : List[AbstractRenderer]) -> None:
+    def __init__(self, name : str, mode : Mode, time_manager : AbstractTimeManager, exchange_manager : AbstractExchange, checkers : List[AbstractChecker], infos_manager : InfosManager, renderers : List[AbstractRenderer]) -> None:
+        self.name = name
         self.mode = mode
         self.time_manager = time_manager
         self.exchange_manager = exchange_manager
@@ -30,7 +31,7 @@ class AbstractTradingEnv(gym.Env, AbstractChecker, AbstractEnvironmentElement, A
     
     def _prepare_environment_elements(self):
         # Get all the environment elements
-        self.env_elements : list[AbstractEnvironmentElement] = element_deep_search(self)
+        self.env_elements : list[AbstractEnvironmentElement] = element_deep_search(self, excluded_classes= (AbstractTradingEnv,))
         self.env_elements.remove(self)
         
         # Sort the environment elements by order_index
@@ -40,7 +41,7 @@ class AbstractTradingEnv(gym.Env, AbstractChecker, AbstractEnvironmentElement, A
         for element in self.env_elements:
             element.set_trading_env(self)
         self.set_trading_env(self)
-
+        
         checkers = checker_deep_search(self.env_elements) + self.initial_checkers
         self.checkers = list(dict.fromkeys(checkers)) # Exclude doublons
 
@@ -56,7 +57,7 @@ class AbstractTradingEnv(gym.Env, AbstractChecker, AbstractEnvironmentElement, A
         
         for element in self.env_elements:
             warm_steps_needed = max(warm_steps_needed, element.simulation_warmup_steps)
-        
+            
         # Reset all environment elements.
         for element in self.env_elements:
             await element.__reset__(seed = seed)

@@ -5,7 +5,7 @@
     "distutils": {
         "name": "gym_trading_env2.core.quotation",
         "sources": [
-            "./gym_trading_env2/core/quotation.pyx"
+            "gym_trading_env2/core/quotation.pyx"
         ]
     },
     "module_name": "gym_trading_env2.core.quotation"
@@ -1479,11 +1479,11 @@ static const char *__pyx_filename;
 /* #### Code section: filename_table ### */
 
 static const char *__pyx_f[] = {
-  "gym_trading_env2\\\\core\\\\quotation.pyx",
+  "gym_trading_env2/core/quotation.pyx",
   "<stringsource>",
-  "gym_trading_env2\\\\core\\\\asset.pxd",
-  "gym_trading_env2\\\\core\\\\pair.pxd",
-  "gym_trading_env2\\\\core\\\\value.pxd",
+  "gym_trading_env2/core/asset.pxd",
+  "gym_trading_env2/core/pair.pxd",
+  "gym_trading_env2/core/value.pxd",
 };
 /* #### Code section: utility_code_proto_before_types ### */
 /* ForceInitThreads.proto */
@@ -2322,7 +2322,7 @@ static const char __pyx_k_asyncio_coroutines[] = "asyncio.coroutines";
 static const char __pyx_k_cline_in_traceback[] = "cline_in_traceback";
 static const char __pyx_k_Quotation___reduce_cython[] = "Quotation.__reduce_cython__";
 static const char __pyx_k_Quotation___setstate_cython[] = "Quotation.__setstate_cython__";
-static const char __pyx_k_gym_trading_env2_core_quotation[] = "gym_trading_env2\\core\\quotation.pyx";
+static const char __pyx_k_gym_trading_env2_core_quotation[] = "gym_trading_env2/core/quotation.pyx";
 static const char __pyx_k_no_default___reduce___due_to_non[] = "no default __reduce__ due to non-trivial __cinit__";
 static const char __pyx_k_gym_trading_env2_core_quotation_2[] = "gym_trading_env2.core.quotation";
 /* #### Code section: decls ### */
