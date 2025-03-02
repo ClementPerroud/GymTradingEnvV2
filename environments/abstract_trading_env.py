@@ -68,8 +68,9 @@ class AbstractTradingEnv(gym.Env, AbstractChecker, AbstractEnvironmentElement, A
                 await self.__step__()
                 terminated, truncated, trainable = await self.__check__()
                 if terminated or truncated:
-                    if _try >= 3: raise ValueError("Your environment has been terminated or truncated during initialization too many times.")
-                    print(f"Warning : The environment initialization failed. Retry {_try + 1} ...")
+                    if _try >= 20: 
+                        raise ValueError(f"Your environment {self.name} has been terminated or truncated during initialization too many times ({_try}). Date : {await self.time_manager.get_current_datetime()}")
+                    # print(f"Warning : The environment initialization failed. Retry {_try + 1} at date {await self.time_manager.get_current_datetime()} ...")
                     return await self.__reset__(seed = seed, _try = _try + 1) 
         return trainable
 
